@@ -6,6 +6,9 @@
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>FREE FASHION QUIZ</title>
+  <!-- Beveiliging: voorkom code-injectie en lek geen URL naar derden -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://formspree.io; img-src 'self'; base-uri 'none'; form-action https://formspree.io;">
+  <meta name="referrer" content="no-referrer">
   <!-- Font laadt asynchroon — pagina rendert direct, ook zonder internet -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap" media="print" onload="this.media='all'">
@@ -379,6 +382,15 @@
     .email-input::placeholder { color: rgba(255,255,255,0.28); }
     .email-input:focus { border-color: var(--white); }
     .email-input.invalid { border-color: var(--red); }
+
+    .email-privacy {
+      font-size: clamp(0.6rem, 2.2vw, 0.7rem);
+      opacity: 0.35;
+      line-height: 1.5;
+      font-weight: 400;
+      text-transform: none;
+      max-width: 280px;
+    }
 
     .btn-skip {
       font-size: 0.75rem;
@@ -853,6 +865,9 @@
       el('button', { className: 'btn', onclick: function() { submitEmail(false); } }, [
         txt('STUUR MIJ UPDATES!')
       ]),
+      el('p', { className: 'email-privacy' }, [
+        txt('We gebruiken je e-mail alleen voor FREE FASHION nieuws. Je kunt je altijd afmelden.')
+      ]),
       el('button', { className: 'btn-skip', onclick: function() { submitEmail(true); } }, [
         txt('Overslaan \u2192')
       ])
@@ -864,10 +879,9 @@
 
   function submitEmail(skip) {
     if (!skip && S.email) {
-      var v = S.email;
-      var atPos = v.indexOf('@');
-      if (atPos < 1 || v.lastIndexOf('.') <= atPos) {
-        var inp = document.querySelector('.email-input');
+      var inp = document.querySelector('.email-input');
+      // Gebruik browser's ingebouwde e-mailvalidatie + max lengte check
+      if (!inp || !inp.checkValidity() || S.email.length > 254) {
         if (inp) {
           inp.classList.add('invalid');
           inp.value = '';
@@ -932,6 +946,7 @@
 
   function restartQuiz() {
     stopTimers();
+    _submitted = false; // sta nieuwe inzending toe bij opnieuw spelen
     S = {
       screen: 'welcome', qIndex: 0, answers: [],
       email: '', sessionId: uid(), _tick: null, _auto: null
@@ -942,11 +957,16 @@
   // ============================================================
   //  FORMSPREE SUBMIT
   // ============================================================
+  var _submitted = false; // voorkom dubbele inzendingen
+
   function sendToFormspree() {
+    if (_submitted) return;
     if (!FORMSPREE_URL || FORMSPREE_URL === 'VULHIERINZELF') return;
+    _submitted = true;
 
     var score = S.answers.filter(function(a) { return a.isCorrect; }).length;
     var payload = {
+      _gotcha: '',  // honeypot: bots vullen dit in, echte gebruikers niet
       _subject: 'FREE FASHION Quiz \u2014 score ' + score + '/' + QUESTIONS.length,
       session_id: S.sessionId,
       score: score + ' / ' + QUESTIONS.length,
