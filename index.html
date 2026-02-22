@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>FREE FASHION QUIZ</title>
+  <!-- Font laadt asynchroon — pagina rendert direct, ook zonder internet -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap"></noscript>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #000000;
+      --white: #ffffff;
+      --blue:  #1863DC;
+      --green: #22c55e;
+      --red:   #ef4444;
+      --dim:   rgba(255,255,255,0.12);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--black);
+      color: var(--white);
+      font-family: 'Arimo', Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+
+    body { display: flex; flex-direction: column; }
+
+    #app {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      min-height: 100vh;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1.4rem 1.4rem 2rem;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== WELCOME ===== */
+    .screen--welcome {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 1.2rem;
+      padding: 2rem;
+    }
+
+    .logo-mark {
+      font-size: clamp(2.4rem, 12vw, 5rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      line-height: 0.88;
+    }
+
+    .logo-url {
+      font-size: clamp(0.6rem, 2.2vw, 0.75rem);
+      text-transform: uppercase;
+      letter-spacing: 0.35em;
+      opacity: 0.35;
+    }
+
+    .welcome-title {
+      font-size: clamp(1rem, 4.5vw, 1.3rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      margin-top: 0.25rem;
+    }
+
+    .welcome-sub {
+      font-size: clamp(0.8rem, 3vw, 0.95rem);
+      line-height: 1.55;
+      opacity: 0.55;
+      max-width: 280px;
+      font-weight: 400;
+      text-transform: none;
+    }
+
+    /* ===== BUTTON ===== */
+    .btn {
+      background: transparent;
+      color: var(--white);
+      border: 4px solid var(--white);
+      padding: 0.85rem 2.4rem;
+      font-family: 'Arimo', Arial, sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      border-radius: 0;
+      -webkit-appearance: none;
+      transition: background 0.12s, color 0.12s;
+      touch-action: manipulation;
+    }
+
+    .btn:active {
+      background: var(--white);
+      color: var(--black);
+    }
+
+    /* ===== PROGRESS & TIMER ===== */
+    .progress-track {
+      height: 3px;
+      background: var(--dim);
+      margin-bottom: 1rem;
+      flex-shrink: 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: rgba(255,255,255,0.5);
+      transition: width 0.4s ease;
+    }
+
+    .timer-track {
+      height: 5px;
+      background: var(--dim);
+      margin-bottom: 1.25rem;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .timer-fill {
+      height: 100%;
+      background: var(--blue);
+      transition: width 1s linear;
+    }
+
+    .timer-fill.urgent { background: var(--red); }
+
+    .q-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.6rem;
+      flex-shrink: 0;
+    }
+
+    .q-counter {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      opacity: 0.4;
+    }
+
+    .timer-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--blue);
+      line-height: 1;
+      min-width: 2.2rem;
+      text-align: right;
+    }
+
+    .timer-number.urgent {
+      color: var(--red);
+      animation: blink 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes blink {
+      from { opacity: 1; }
+      to   { opacity: 0.45; }
+    }
+
+    /* ===== QUESTION TEXT ===== */
+    .question-text {
+      font-size: clamp(1.1rem, 4.8vw, 1.55rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      line-height: 1.22;
+      flex: 1;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    /* ===== OPTIONS ===== */
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      flex-shrink: 0;
+    }
+
+    .options--tf { flex-direction: row; gap: 0.7rem; }
+
+    .option-btn {
+      background: transparent;
+      color: var(--white);
+      border: 3px solid rgba(255,255,255,0.3);
+      padding: 0.8rem 1.1rem;
+      font-family: 'Arimo', Arial, sans-serif;
+      font-size: clamp(0.85rem, 3.5vw, 1rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      text-align: left;
+      border-radius: 0;
+      -webkit-appearance: none;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      line-height: 1.25;
+      touch-action: manipulation;
+      transition: border-color 0.1s, background 0.1s;
+    }
+
+    .option-btn:active:not(:disabled) {
+      border-color: var(--white);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .option-btn:disabled { cursor: default; }
+
+    .opt-letter {
+      font-size: 1rem;
+      min-width: 1.3rem;
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+
+    /* True/False big buttons */
+    .options--tf .option-btn {
+      flex: 1;
+      justify-content: center;
+      font-size: clamp(1rem, 5vw, 1.3rem);
+      padding: 1.5rem 0.5rem;
+      text-align: center;
+    }
+
+    .options--tf .opt-letter { display: none; }
+
+    /* Answer states */
+    .option-btn.s-correct {
+      border-color: var(--green) !important;
+      background: rgba(34,197,94,0.14) !important;
+      color: var(--green) !important;
+    }
+
+    .option-btn.s-wrong {
+      border-color: rgba(239,68,68,0.35) !important;
+      background: rgba(239,68,68,0.06) !important;
+      color: rgba(255,255,255,0.22) !important;
+    }
+
+    .option-btn.s-dim {
+      border-color: rgba(255,255,255,0.1) !important;
+      color: rgba(255,255,255,0.3) !important;
+    }
+
+    /* ===== FEEDBACK ===== */
+    .feedback {
+      margin-top: 1.1rem;
+      padding: 0.9rem 1rem;
+      border-left: 4px solid transparent;
+      flex-shrink: 0;
+    }
+
+    .feedback--good    { border-color: var(--green); background: rgba(34,197,94,0.08); }
+    .feedback--bad     { border-color: var(--red);   background: rgba(239,68,68,0.07); }
+    .feedback--timeout { border-color: var(--blue);  background: rgba(24,99,220,0.08); }
+
+    .feedback-label {
+      font-size: clamp(0.95rem, 4vw, 1.1rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.4rem;
+    }
+
+    .feedback--good    .feedback-label { color: var(--green); }
+    .feedback--bad     .feedback-label { color: var(--red);   }
+    .feedback--timeout .feedback-label { color: var(--blue);  }
+
+    .feedback-text {
+      font-size: clamp(0.82rem, 3.2vw, 0.92rem);
+      line-height: 1.55;
+      opacity: 0.82;
+      text-transform: none;
+      font-weight: 400;
+    }
+
+    .next-hint {
+      text-align: center;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      opacity: 0.28;
+      margin-top: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    /* ===== INTERLUDE ===== */
+    .screen--interlude {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: var(--blue);
+      padding: 2rem;
+    }
+
+    .interlude-text {
+      font-size: clamp(1.8rem, 9.5vw, 3.8rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      line-height: 1.08;
+    }
+
+    /* ===== EMAIL ===== */
+    .screen--email {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 1.2rem;
+      padding: 2rem;
+    }
+
+    .email-q {
+      font-size: clamp(0.65rem, 2.2vw, 0.75rem);
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      opacity: 0.4;
+    }
+
+    .email-title {
+      font-size: clamp(1.6rem, 8vw, 2.8rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      line-height: 1.05;
+    }
+
+    .email-sub {
+      font-size: clamp(0.8rem, 3vw, 0.92rem);
+      opacity: 0.55;
+      line-height: 1.5;
+      font-weight: 400;
+      text-transform: none;
+      max-width: 280px;
+    }
+
+    .email-input {
+      background: transparent;
+      color: var(--white);
+      border: 3px solid rgba(255,255,255,0.35);
+      padding: 0.9rem 1.1rem;
+      font-family: 'Arimo', Arial, sans-serif;
+      font-size: 1rem;
+      font-weight: 400;
+      width: 100%;
+      max-width: 320px;
+      border-radius: 0;
+      -webkit-appearance: none;
+      outline: none;
+      text-align: center;
+    }
+
+    .email-input::placeholder { color: rgba(255,255,255,0.28); }
+    .email-input:focus { border-color: var(--white); }
+    .email-input.invalid { border-color: var(--red); }
+
+    .btn-skip {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      opacity: 0.38;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: var(--white);
+      font-family: 'Arimo', Arial, sans-serif;
+      font-weight: 700;
+      padding: 0.4rem;
+      touch-action: manipulation;
+    }
+
+    /* ===== END ===== */
+    .screen--end {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 1.1rem;
+      padding: 2rem;
+    }
+
+    .score-big {
+      font-size: clamp(5rem, 26vw, 10rem);
+      font-weight: 700;
+      color: var(--blue);
+      line-height: 1;
+    }
+
+    .score-label {
+      font-size: clamp(0.75rem, 2.8vw, 0.9rem);
+      text-transform: uppercase;
+      letter-spacing: 0.28em;
+      opacity: 0.4;
+      margin-top: -0.4rem;
+    }
+
+    .end-title {
+      font-size: clamp(1.2rem, 5.5vw, 2rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      line-height: 1.12;
+    }
+
+    .end-sub {
+      font-size: clamp(0.8rem, 3vw, 0.92rem);
+      opacity: 0.55;
+      line-height: 1.5;
+      font-weight: 400;
+      text-transform: none;
+      max-width: 280px;
+    }
+
+    .ff-footer {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.35em;
+      opacity: 0.22;
+      margin-top: 0.5rem;
+    }
+
+    .end-tip {
+      font-size: clamp(0.8rem, 3.2vw, 0.95rem);
+      line-height: 1.55;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border: 3px solid var(--white);
+      padding: 1rem 1.2rem;
+      max-width: 300px;
+      text-align: center;
+    }
+
+    .end-tip--blue {
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+  // ============================================================
+  //  CONFIGURATIE
+  //  Verander VULHIERINZELF naar jouw Formspree URL
+  //  Zie setup-instructies.md voor uitleg
+  // ============================================================
+  const FORMSPREE_URL = 'https://formspree.io/f/xaqdprvd';
+
+  // ============================================================
+  //  QUIZ DATA — alle content is hier statisch gedefinieerd
+  // ============================================================
+  const QUESTIONS = [
+    {
+      type: 'abc',
+      question: 'Hoeveel nieuwe kledingstukken koopt de gemiddelde Nederlander per jaar?',
+      options: ['Ongeveer 10', 'Ongeveer 25', 'Meer dan 40'],
+      correct: 2,
+      explanation: 'Bijna één per week! De kledingproductie is in 20 jaar met 400% gestegen.'
+    },
+    {
+      type: 'abc',
+      question: 'Hoe vaak dragen we een kledingstuk gemiddeld?',
+      options: ['7 keer', '23 keer', 'Meer dan 80 keer'],
+      correct: 0,
+      explanation: 'Gemiddeld 7x, dan wordt het afgedankt. In veel andere landen is het zelfs minder.'
+    },
+    {
+      type: 'truefalse',
+      question: 'Er is al genoeg kleding op de wereld om de komende 6 generaties van te voorzien.',
+      options: ['WAAR', 'NIET WAAR'],
+      correct: 0,
+      explanation: 'Precies waarom FREE FASHION bestaat — het hoeft allemaal niet meer nieuw te zijn!'
+    },
+    {
+      type: 'abc',
+      question: 'Bijna 60% van alle kleding is gemaakt van... wat eigenlijk?',
+      options: ['Vezels van planten', 'Plastic van aardolie', 'Gerecycled katoen'],
+      correct: 1,
+      explanation: 'Polyester, nylon en acryl zijn plastic van aardolie. Dat verklaart ook al die microplastics in ons water en onze kleding.'
+    },
+    {
+      type: 'truefalse',
+      question: 'De kledingindustrie stoot meer CO\u2082 uit dan de volledige luchtvaart.',
+      options: ['WAAR', 'NIET WAAR'],
+      correct: 0,
+      explanation: 'Waar! ~8% van de wereldwijde CO\u2082-uitstoot \u2014 meer dan de hele luchtvaart (3\u20135%) bij elkaar.'
+    },
+    {
+      type: 'abc',
+      question: 'Stel je geeft al je kleding mee voor recycling \u2014 hoeveel % wordt er \u00e9cht nieuwe kleding van?',
+      options: ['Minder dan 2%', 'Tussen 10\u201315%', 'Meer dan 15%'],
+      correct: 0,
+      explanation: 'Minder dan 2%! Gemengde stoffen zijn moeilijk te recyclen, en ultra fast fashion is te laag van kwaliteit voor hergebruik.'
+    },
+    {
+      type: 'abc',
+      question: 'Hoeveel liter water kost het om een spijkerbroek te maken?',
+      options: ['Ongeveer 700 liter', 'Ongeveer 3.000 liter', 'Meer dan 8.000 liter'],
+      correct: 2,
+      explanation: 'Meer dan 8.000 liter \u2014 dat is zo\u2019n 10 jaar drinkwater voor \u00e9\u00e9n persoon! Een katoenen T-shirt kost zelfs 2,5 jaar drinkwater per persoon.'
+    },
+    {
+      type: 'truefalse',
+      question: 'Kapotte of gescheurde kleding mag gewoon in de textielcontainer.',
+      options: ['WAAR', 'NIET WAAR'],
+      correct: 0,
+      explanation: 'Waar! Van versleten kleding worden poetslappen, isolatiemateriaal of vulling voor autostoelen gemaakt. Altijd meegeven!'
+    },
+    {
+      type: 'abc',
+      question: 'Hoeveel % van ons textielafval wordt in Nederland op de juiste manier ingezameld?',
+      options: ['60%', '75%', '50%'],
+      correct: 2,
+      explanation: 'Slechts 50%. De andere helft wordt verkeerd weggegooid en belandt direct in de verbrandingsoven.'
+    },
+    {
+      type: 'abcd',
+      question: 'Wat is de allermeest duurzame kledingkeuze?',
+      options: ['Biologisch katoen', 'Wat al in je kledingkast hangt', 'Gerecycled polyester', 'Vegan leer'],
+      correct: 1,
+      explanation: 'Wat al in je kast hangt! Geen nieuwe grondstoffen nodig \u2014 geen water, geen aardolie. Alle FREE FASHION dus!'
+    },
+    {
+      type: 'truefalse',
+      question: 'Retourgestuurde online kleding wordt altijd opnieuw verkocht.',
+      options: ['WAAR', 'NIET WAAR'],
+      correct: 1,
+      explanation: 'Niet waar! Sorteren en controleren kost zoveel arbeid dat vernietiging vaak goedkoper is. Schokkend, toch?'
+    },
+    {
+      type: 'abc',
+      question: 'Waar staat FREE FASHION \u00e9cht voor?',
+      options: ['Gratis kleding uitdelen', 'Alle niet-gedragen kleding in de wereld', 'Een outlet voor overtollige voorraden'],
+      correct: 1,
+      explanation: 'WE ZIJN HET GROOTSTE MODEMERK DAT STIEKEM AL LANG BESTAAT! \uD83C\uDF0D'
+    }
+  ];
+
+  // Interludes: key = 1-indexed question number just answered
+  const INTERLUDES = {
+    3: 'GOED\nBEZIG!\nDOOR! \uD83D\uDD25',
+    6: 'WAUW.\nJIJ WEET WAT\nER SPEELT. DOOR! \uD83D\uDCAA',
+    9: 'LAATSTE\nLOODJES!\nJE KAN HET! \uD83D\uDE80'
+  };
+
+  const LETTERS   = ['A', 'B', 'C', 'D'];
+  const Q_TIME    = 20;  // seconden per vraag
+  const ANS_PAUSE = 5;   // seconden antwoord tonen
+  const INT_PAUSE = 3;   // seconden interlude tonen
+
+  // ============================================================
+  //  STATE
+  // ============================================================
+  var S = {
+    screen:    'welcome',
+    qIndex:    0,
+    answers:   [],   // [{qIndex, chosen, isCorrect}]
+    email:     '',
+    sessionId: uid(),
+    _tick:     null,
+    _auto:     null
+  };
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  // ============================================================
+  //  DOM HELPERS — veilig, geen user-input in innerHTML
+  // ============================================================
+  var app = document.getElementById('app');
+
+  function el(tag, attrs, children) {
+    var node = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function(k) {
+        if (k === 'className') { node.className = attrs[k]; }
+        else if (k === 'style') { node.style.cssText = attrs[k]; }
+        else if (k.startsWith('on')) { node.addEventListener(k.slice(2), attrs[k]); }
+        else { node.setAttribute(k, attrs[k]); }
+      });
+    }
+    (children || []).forEach(function(c) {
+      if (c === null || c === undefined) return;
+      node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    });
+    return node;
+  }
+
+  function txt(str) { return document.createTextNode(str || ''); }
+
+  function clear() {
+    while (app.firstChild) app.removeChild(app.firstChild);
+  }
+
+  function stopTimers() {
+    if (S._tick) { clearInterval(S._tick); S._tick = null; }
+    if (S._auto) { clearTimeout(S._auto);  S._auto = null; }
+  }
+
+  // ============================================================
+  //  WELCOME
+  // ============================================================
+  function renderWelcome() {
+    clear();
+    var screen = el('div', { className: 'screen screen--welcome' }, [
+      el('div', { className: 'logo-mark' }, [
+        txt('THIS IS'), el('br'), txt('FREE'), el('br'), txt('FASHION')
+      ]),
+      el('div', { className: 'logo-url' }, [txt('thisisfreefashion.com')]),
+      el('div', { className: 'welcome-title' }, [txt('De Quiz')]),
+      el('p', { className: 'welcome-sub' }, [
+        txt('12 vragen over mode, duurzaamheid en de wereld om je heen. Klaar?')
+      ]),
+      el('button', { className: 'btn', onclick: startQuiz }, [txt('LET\u2019S GO! \u2192')])
+    ]);
+    app.appendChild(screen);
+  }
+
+  function startQuiz() {
+    S.qIndex  = 0;
+    S.answers = [];
+    S.screen  = 'question';
+    render();
+  }
+
+  // ============================================================
+  //  QUESTION
+  // ============================================================
+  function renderQuestion() {
+    var q   = QUESTIONS[S.qIndex];
+    var pct = (S.qIndex / QUESTIONS.length * 100).toFixed(1) + '%';
+    var isTF = (q.type === 'truefalse');
+
+    clear();
+
+    // progress
+    var progressFill = el('div', { className: 'progress-fill', style: 'width:' + pct });
+    // timer fill
+    var timerFill = el('div', { className: 'timer-fill', style: 'width:100%' });
+    var timerNum  = el('span', { className: 'timer-number' }, [txt(String(Q_TIME))]);
+
+    // options
+    var optBtns = q.options.map(function(opt, i) {
+      return el('button', {
+        className: 'option-btn',
+        onclick: function() { pickAnswer(i); }
+      }, [
+        el('span', { className: 'opt-letter' }, [txt(LETTERS[i])]),
+        el('span', {}, [txt(opt)])
+      ]);
+    });
+
+    var optionsDiv = el('div', { className: 'options' + (isTF ? ' options--tf' : '') }, optBtns);
+
+    var screen = el('div', { className: 'screen screen--question' }, [
+      el('div', { className: 'progress-track' }, [progressFill]),
+      el('div', { className: 'q-header' }, [
+        el('span', { className: 'q-counter' }, [
+          txt('Vraag ' + (S.qIndex + 1) + ' van ' + QUESTIONS.length)
+        ]),
+        timerNum
+      ]),
+      el('div', { className: 'timer-track' }, [timerFill]),
+      el('div', { className: 'question-text' }, [txt(q.question)]),
+      optionsDiv
+    ]);
+    app.appendChild(screen);
+
+    // Countdown
+    S.timeLeft = Q_TIME;
+    S._tick = setInterval(function() {
+      S.timeLeft--;
+      timerNum.textContent = S.timeLeft;
+      timerFill.style.width = (S.timeLeft / Q_TIME * 100) + '%';
+      if (S.timeLeft <= 5) {
+        timerNum.classList.add('urgent');
+        timerFill.classList.add('urgent');
+      }
+      if (S.timeLeft <= 0) {
+        clearInterval(S._tick);
+        S._tick = null;
+        pickAnswer(-1);
+      }
+    }, 1000);
+  }
+
+  function pickAnswer(chosen) {
+    stopTimers();
+    var q = QUESTIONS[S.qIndex];
+    var isCorrect = (chosen === q.correct);
+    S.answers.push({ qIndex: S.qIndex, chosen: chosen, isCorrect: isCorrect });
+    showAnswerScreen(chosen, isCorrect);
+  }
+
+  // ============================================================
+  //  ANSWER
+  // ============================================================
+  function showAnswerScreen(chosen, isCorrect) {
+    var q     = QUESTIONS[S.qIndex];
+    var isTF  = (q.type === 'truefalse');
+    var pct   = ((S.qIndex + 1) / QUESTIONS.length * 100).toFixed(1) + '%';
+    var timeout = (chosen === -1);
+
+    var fbClass, fbLabel;
+    if (isCorrect) {
+      fbClass = 'feedback--good';
+      fbLabel = 'YES! GOED ANTWOORD! \uD83C\uDF89';
+    } else if (timeout) {
+      fbClass = 'feedback--timeout';
+      fbLabel = 'TE LAAT! MAAR ZO ZIT HET:';
+    } else {
+      fbClass = 'feedback--bad';
+      fbLabel = 'BIJNA GOED! ZO ZIT HET ECHT:';
+    }
+
+    var optBtns = q.options.map(function(opt, i) {
+      var cls = 'option-btn ';
+      if (i === q.correct)                 cls += 's-correct';
+      else if (i === chosen && !isCorrect) cls += 's-wrong';
+      else                                 cls += 's-dim';
+      return el('button', { className: cls, disabled: 'true' }, [
+        el('span', { className: 'opt-letter' }, [txt(LETTERS[i])]),
+        el('span', {}, [txt(opt)])
+      ]);
+    });
+
+    var nextHint = el('div', { className: 'next-hint' }, [txt('Verder in ' + ANS_PAUSE + '...')]);
+
+    clear();
+    var screen = el('div', { className: 'screen screen--question' }, [
+      el('div', { className: 'progress-track' }, [
+        el('div', { className: 'progress-fill', style: 'width:' + pct })
+      ]),
+      el('div', { className: 'q-header' }, [
+        el('span', { className: 'q-counter' }, [
+          txt('Vraag ' + (S.qIndex + 1) + ' van ' + QUESTIONS.length)
+        ])
+      ]),
+      el('div', { style: 'height:5px; margin-bottom:1.25rem;' }),
+      el('div', { className: 'question-text' }, [txt(q.question)]),
+      el('div', { className: 'options' + (isTF ? ' options--tf' : '') }, optBtns),
+      el('div', { className: 'feedback ' + fbClass }, [
+        el('div', { className: 'feedback-label' }, [txt(fbLabel)]),
+        el('div', { className: 'feedback-text' }, [txt(q.explanation)])
+      ]),
+      nextHint
+    ]);
+    app.appendChild(screen);
+
+    var cd = ANS_PAUSE;
+    S._tick = setInterval(function() {
+      cd--;
+      nextHint.textContent = cd > 0 ? ('Verder in ' + cd + '...') : 'Laden...';
+      if (cd <= 0) {
+        clearInterval(S._tick);
+        S._tick = null;
+        advanceAfterAnswer();
+      }
+    }, 1000);
+  }
+
+  function advanceAfterAnswer() {
+    var justAnswered = S.qIndex + 1; // 1-indexed
+    if (INTERLUDES[justAnswered]) {
+      S.qIndex++;
+      showInterlude(INTERLUDES[justAnswered]);
+    } else if (S.qIndex >= QUESTIONS.length - 1) {
+      S.qIndex++;
+      S.screen = 'email';
+      render();
+    } else {
+      S.qIndex++;
+      S.screen = 'question';
+      render();
+    }
+  }
+
+  // ============================================================
+  //  INTERLUDE
+  // ============================================================
+  function showInterlude(text) {
+    stopTimers();
+    clear();
+    var lines = text.split('\n');
+    var children = [];
+    lines.forEach(function(line, i) {
+      if (i > 0) children.push(el('br'));
+      children.push(txt(line));
+    });
+    var screen = el('div', { className: 'screen screen--interlude' }, [
+      el('div', { className: 'interlude-text' }, children)
+    ]);
+    app.appendChild(screen);
+
+    S._auto = setTimeout(function() {
+      S.screen = S.qIndex >= QUESTIONS.length ? 'email' : 'question';
+      render();
+    }, INT_PAUSE * 1000);
+  }
+
+  // ============================================================
+  //  EMAIL (vraag 13 — optioneel)
+  // ============================================================
+  function renderEmail() {
+    clear();
+
+    // Input element — waarde wordt programmatisch gezet, NIET via innerHTML
+    var emailInput = el('input', {
+      type: 'email',
+      className: 'email-input',
+      placeholder: 'jouw@email.nl',
+      autocomplete: 'email',
+      inputmode: 'email',
+      oninput: function(e) { S.email = e.target.value.trim(); }
+    });
+    // Zet vorige waarde veilig via .value (geen HTML injection mogelijk)
+    emailInput.value = S.email;
+
+    var screen = el('div', { className: 'screen screen--email' }, [
+      el('div', { className: 'email-q' }, [txt('Vraag 13 \u2014 Optioneel')]),
+      el('div', { className: 'email-title' }, [txt('BLIJF OP'), el('br'), txt('DE HOOGTE')]),
+      el('p', { className: 'email-sub' }, [
+        txt('Wil je nieuws ontvangen over FREE FASHION? Laat dan je e-mailadres achter \u2014 helemaal vrijblijvend!')
+      ]),
+      emailInput,
+      el('button', { className: 'btn', onclick: function() { submitEmail(false); } }, [
+        txt('STUUR MIJ UPDATES!')
+      ]),
+      el('button', { className: 'btn-skip', onclick: function() { submitEmail(true); } }, [
+        txt('Overslaan \u2192')
+      ])
+    ]);
+    app.appendChild(screen);
+
+    setTimeout(function() { emailInput.focus(); }, 300);
+  }
+
+  function submitEmail(skip) {
+    if (!skip && S.email) {
+      var v = S.email;
+      var atPos = v.indexOf('@');
+      if (atPos < 1 || v.lastIndexOf('.') <= atPos) {
+        var inp = document.querySelector('.email-input');
+        if (inp) {
+          inp.classList.add('invalid');
+          inp.value = '';
+          inp.placeholder = 'Vul een geldig e-mailadres in';
+        }
+        return;
+      }
+    }
+    sendToFormspree();
+    S.screen = 'end';
+    render();
+  }
+
+  // ============================================================
+  //  END — 3 varianten op basis van score
+  // ============================================================
+  function renderEnd() {
+    var score = S.answers.filter(function(a) { return a.isCorrect; }).length;
+    var total = QUESTIONS.length;
+
+    var title, sub, tip, tipClass;
+
+    if (score < 5) {
+      // Variant 1: minder dan 5 goed
+      title = 'GOED DAT JE\nMEEDEED! \uD83D\uDC4B';
+      sub   = 'Wist je dat FREE FASHION medewerkers je alles kunnen vertellen over duurzame mode en wat jij zelf kunt doen?';
+      tip   = '\uD83D\uDCAC Spreek een FREE FASHION medewerker aan voor persoonlijke tips!';
+      tipClass = 'end-tip';
+    } else if (score <= 8) {
+      // Variant 2: 5-8 goed
+      title = 'WAUW, LEKKER\nOP WEG! \uD83D\uDCA1';
+      sub   = 'Je weet al veel \u2014 en er valt nog meer te ontdekken. Er zijn geweldige podcasts en documentaires over duurzame mode!';
+      tip   = '\uD83C\uDFA7 Tip: zoek op \u201eThe True Cost\u201f (docu) of \u201eWardrobe Crisis\u201f (podcast)';
+      tipClass = 'end-tip end-tip--blue';
+    } else {
+      // Variant 3: meer dan 8 goed
+      title = 'WAT BEN JE\nGOED OP DE\nHOOGTE! \uD83C\uDFC6';
+      sub   = 'Jij snapt hoe de mode-industrie werkt \u2014 en dat maakt je een krachtige stem voor verandering.';
+      tip   = '\uD83D\uDDE3\uFE0F Vertel dit verhaal door aan anderen! Samen vergroten we de impact.';
+      tipClass = 'end-tip end-tip--blue';
+    }
+
+    var titleLines = title.split('\n');
+    var titleChildren = [];
+    titleLines.forEach(function(line, i) {
+      if (i > 0) titleChildren.push(el('br'));
+      titleChildren.push(txt(line));
+    });
+
+    clear();
+    var screen = el('div', { className: 'screen screen--end' }, [
+      el('div', { className: 'score-big' }, [txt(String(score))]),
+      el('div', { className: 'score-label' }, [txt('van de ' + total + ' goed')]),
+      el('div', { className: 'end-title' }, titleChildren),
+      el('p', { className: 'end-sub' }, [txt(sub)]),
+      el('div', { className: tipClass }, [txt(tip)]),
+      el('button', { className: 'btn', onclick: restartQuiz }, [txt('OPNIEUW SPELEN')]),
+      el('div', { className: 'ff-footer' }, [txt('THIS IS FREE FASHION')])
+    ]);
+    app.appendChild(screen);
+  }
+
+  function restartQuiz() {
+    stopTimers();
+    S = {
+      screen: 'welcome', qIndex: 0, answers: [],
+      email: '', sessionId: uid(), _tick: null, _auto: null
+    };
+    render();
+  }
+
+  // ============================================================
+  //  FORMSPREE SUBMIT
+  // ============================================================
+  function sendToFormspree() {
+    if (!FORMSPREE_URL || FORMSPREE_URL === 'VULHIERINZELF') return;
+
+    var score = S.answers.filter(function(a) { return a.isCorrect; }).length;
+    var payload = {
+      _subject: 'FREE FASHION Quiz \u2014 score ' + score + '/' + QUESTIONS.length,
+      session_id: S.sessionId,
+      score: score + ' / ' + QUESTIONS.length,
+      email: S.email || '(niet opgegeven)'
+    };
+
+    S.answers.forEach(function(a) {
+      var q = QUESTIONS[a.qIndex];
+      var chosenText = a.chosen === -1
+        ? 'Niet geantwoord (timeout)'
+        : (q.options[a.chosen] || '?');
+      var correctText = q.options[q.correct];
+      var key = 'vraag_' + (a.qIndex + 1);
+      payload[key] = a.isCorrect
+        ? ('\u2713 ' + chosenText)
+        : ('\u2717 ' + chosenText + ' (correct: ' + correctText + ')');
+    });
+
+    fetch(FORMSPREE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(function() { /* silent: quiz werkt ook offline */ });
+  }
+
+  // ============================================================
+  //  RENDER DISPATCHER
+  // ============================================================
+  function render() {
+    stopTimers();
+    switch (S.screen) {
+      case 'welcome':  renderWelcome();  break;
+      case 'question': renderQuestion(); break;
+      case 'email':    renderEmail();    break;
+      case 'end':      renderEnd();      break;
+    }
+  }
+
+  try {
+    render();
+  } catch (e) {
+    // Toon foutmelding als de quiz niet kan starten
+    var errDiv = document.createElement('div');
+    errDiv.style.cssText = 'color:#ef4444;padding:2rem;font-family:Arial;font-size:0.9rem;';
+    errDiv.textContent = 'Quiz kon niet starten. Fout: ' + e.message;
+    document.getElementById('app').appendChild(errDiv);
+  }
+</script>
+</body>
+</html>
