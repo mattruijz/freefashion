@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>FREE FASHION QUIZ</title>
   <!-- Beveiliging: voorkom code-injectie en lek geen URL naar derden -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://formspree.io; img-src 'self'; base-uri 'none'; form-action https://formspree.io;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://script.google.com https://script.googleusercontent.com; img-src 'self'; base-uri 'none'; form-action 'none';">
   <meta name="referrer" content="no-referrer">
   <!-- Font laadt asynchroon — pagina rendert direct, ook zonder internet -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&display=swap">
@@ -51,6 +51,7 @@
       flex-direction: column;
       padding: 1.4rem 1.4rem 2rem;
       animation: fadeIn 0.25s ease;
+      overflow-y: auto;
     }
 
     @keyframes fadeIn {
@@ -115,6 +116,7 @@
       -webkit-appearance: none;
       transition: background 0.12s, color 0.12s;
       touch-action: manipulation;
+      flex-shrink: 0;
     }
 
     .btn:active {
@@ -122,7 +124,7 @@
       color: var(--black);
     }
 
-    /* ===== PROGRESS & TIMER ===== */
+    /* ===== PROGRESS ===== */
     .progress-track {
       height: 3px;
       background: var(--dim);
@@ -136,27 +138,10 @@
       transition: width 0.4s ease;
     }
 
-    .timer-track {
-      height: 5px;
-      background: var(--dim);
-      margin-bottom: 1.25rem;
-      flex-shrink: 0;
-      overflow: hidden;
-    }
-
-    .timer-fill {
-      height: 100%;
-      background: var(--blue);
-      transition: width 1s linear;
-    }
-
-    .timer-fill.urgent { background: var(--red); }
-
     .q-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.8rem;
       flex-shrink: 0;
     }
 
@@ -167,35 +152,14 @@
       opacity: 0.4;
     }
 
-    .timer-number {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--blue);
-      line-height: 1;
-      min-width: 2.2rem;
-      text-align: right;
-    }
-
-    .timer-number.urgent {
-      color: var(--red);
-      animation: blink 0.5s ease-in-out infinite alternate;
-    }
-
-    @keyframes blink {
-      from { opacity: 1; }
-      to   { opacity: 0.45; }
-    }
-
     /* ===== QUESTION TEXT ===== */
     .question-text {
       font-size: clamp(1.1rem, 4.8vw, 1.55rem);
       font-weight: 700;
       text-transform: uppercase;
       line-height: 1.22;
-      flex: 1;
       margin-bottom: 1.2rem;
-      display: flex;
-      align-items: flex-start;
+      flex-shrink: 0;
     }
 
     /* ===== OPTIONS ===== */
@@ -269,50 +233,54 @@
     }
 
     .option-btn.s-dim {
-      border-color: rgba(255,255,255,0.1) !important;
-      color: rgba(255,255,255,0.3) !important;
+      border-color: rgba(255,255,255,0.06) !important;
+      color: rgba(255,255,255,0.18) !important;
+    }
+
+    /* Options in review mode (answer screen) — smaller, visual reference only */
+    .options--review {
+      gap: 0.35rem;
+    }
+
+    .options--review .option-btn {
+      padding: 0.5rem 0.8rem;
+      font-size: clamp(0.72rem, 2.8vw, 0.82rem);
+      border-width: 2px;
+    }
+
+    .options--review.options--tf .option-btn {
+      padding: 0.7rem 0.4rem;
+      font-size: clamp(0.8rem, 3.5vw, 0.95rem);
     }
 
     /* ===== FEEDBACK ===== */
     .feedback {
-      margin-top: 1.1rem;
       padding: 0.9rem 1rem;
       border-left: 4px solid transparent;
       flex-shrink: 0;
+      margin-bottom: 0.8rem;
     }
 
-    .feedback--good    { border-color: var(--green); background: rgba(34,197,94,0.08); }
-    .feedback--bad     { border-color: var(--red);   background: rgba(239,68,68,0.07); }
-    .feedback--timeout { border-color: var(--blue);  background: rgba(24,99,220,0.08); }
+    .feedback--good { border-color: var(--green); background: rgba(34,197,94,0.08); }
+    .feedback--bad  { border-color: var(--red);   background: rgba(239,68,68,0.07); }
 
     .feedback-label {
-      font-size: clamp(0.95rem, 4vw, 1.1rem);
+      font-size: clamp(1.1rem, 5vw, 1.4rem);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
       margin-bottom: 0.4rem;
     }
 
-    .feedback--good    .feedback-label { color: var(--green); }
-    .feedback--bad     .feedback-label { color: var(--red);   }
-    .feedback--timeout .feedback-label { color: var(--blue);  }
+    .feedback--good .feedback-label { color: var(--green); }
+    .feedback--bad  .feedback-label { color: var(--red);   }
 
     .feedback-text {
-      font-size: clamp(0.82rem, 3.2vw, 0.92rem);
+      font-size: clamp(0.9rem, 3.8vw, 1.05rem);
       line-height: 1.55;
       opacity: 0.82;
       text-transform: none;
       font-weight: 400;
-    }
-
-    .next-hint {
-      text-align: center;
-      font-size: 0.68rem;
-      text-transform: uppercase;
-      letter-spacing: 0.2em;
-      opacity: 0.28;
-      margin-top: 0.9rem;
-      flex-shrink: 0;
     }
 
     /* ===== INTERLUDE ===== */
@@ -479,10 +447,10 @@
 <script>
   // ============================================================
   //  CONFIGURATIE
-  //  Verander VULHIERINZELF naar jouw Formspree URL
+  //  Verander VULHIERINZELF naar jouw Google Apps Script URL
   //  Zie setup-instructies.md voor uitleg
   // ============================================================
-  const FORMSPREE_URL = 'https://formspree.io/f/xaqdprvd';
+  const SHEETS_URL = 'VULHIERINZELF';
 
   // ============================================================
   //  QUIZ DATA — alle content is hier statisch gedefinieerd
@@ -493,7 +461,7 @@
       question: 'Hoeveel nieuwe kledingstukken koopt de gemiddelde Nederlander per jaar?',
       options: ['Ongeveer 10', 'Ongeveer 25', 'Meer dan 40'],
       correct: 2,
-      explanation: 'Bijna één per week! De kledingproductie is in 20 jaar met 400% gestegen.'
+      explanation: 'Bijna \u00e9\u00e9n per week! De kledingproductie is in 20 jaar met 400% gestegen.'
     },
     {
       type: 'abc',
@@ -507,7 +475,7 @@
       question: 'Er is al genoeg kleding op de wereld om de komende 6 generaties van te voorzien.',
       options: ['WAAR', 'NIET WAAR'],
       correct: 0,
-      explanation: 'Precies waarom FREE FASHION bestaat — het hoeft allemaal niet meer nieuw te zijn!'
+      explanation: 'Precies waarom FREE FASHION bestaat \u2014 het hoeft allemaal niet meer nieuw te zijn!'
     },
     {
       type: 'abc',
@@ -582,8 +550,6 @@
   };
 
   const LETTERS   = ['A', 'B', 'C', 'D'];
-  const Q_TIME    = 20;  // seconden per vraag
-  const ANS_PAUSE = 5;   // seconden antwoord tonen
   const INT_PAUSE = 3;   // seconden interlude tonen
 
   // ============================================================
@@ -595,7 +561,6 @@
     answers:   [],   // [{qIndex, chosen, isCorrect}]
     email:     '',
     sessionId: uid(),
-    _tick:     null,
     _auto:     null
   };
 
@@ -632,8 +597,7 @@
   }
 
   function stopTimers() {
-    if (S._tick) { clearInterval(S._tick); S._tick = null; }
-    if (S._auto) { clearTimeout(S._auto);  S._auto = null; }
+    if (S._auto) { clearTimeout(S._auto); S._auto = null; }
   }
 
   // ============================================================
@@ -663,7 +627,7 @@
   }
 
   // ============================================================
-  //  QUESTION
+  //  QUESTION — geen timer, gebruiker kiest zelf
   // ============================================================
   function renderQuestion() {
     var q   = QUESTIONS[S.qIndex];
@@ -672,13 +636,6 @@
 
     clear();
 
-    // progress
-    var progressFill = el('div', { className: 'progress-fill', style: 'width:' + pct });
-    // timer fill
-    var timerFill = el('div', { className: 'timer-fill', style: 'width:100%' });
-    var timerNum  = el('span', { className: 'timer-number' }, [txt(String(Q_TIME))]);
-
-    // options
     var optBtns = q.options.map(function(opt, i) {
       return el('button', {
         className: 'option-btn',
@@ -692,35 +649,18 @@
     var optionsDiv = el('div', { className: 'options' + (isTF ? ' options--tf' : '') }, optBtns);
 
     var screen = el('div', { className: 'screen screen--question' }, [
-      el('div', { className: 'progress-track' }, [progressFill]),
+      el('div', { className: 'progress-track' }, [
+        el('div', { className: 'progress-fill', style: 'width:' + pct })
+      ]),
       el('div', { className: 'q-header' }, [
         el('span', { className: 'q-counter' }, [
           txt('Vraag ' + (S.qIndex + 1) + ' van ' + QUESTIONS.length)
-        ]),
-        timerNum
+        ])
       ]),
-      el('div', { className: 'timer-track' }, [timerFill]),
       el('div', { className: 'question-text' }, [txt(q.question)]),
       optionsDiv
     ]);
     app.appendChild(screen);
-
-    // Countdown
-    S.timeLeft = Q_TIME;
-    S._tick = setInterval(function() {
-      S.timeLeft--;
-      timerNum.textContent = S.timeLeft;
-      timerFill.style.width = (S.timeLeft / Q_TIME * 100) + '%';
-      if (S.timeLeft <= 5) {
-        timerNum.classList.add('urgent');
-        timerFill.classList.add('urgent');
-      }
-      if (S.timeLeft <= 0) {
-        clearInterval(S._tick);
-        S._tick = null;
-        pickAnswer(-1);
-      }
-    }, 1000);
   }
 
   function pickAnswer(chosen) {
@@ -732,25 +672,17 @@
   }
 
   // ============================================================
-  //  ANSWER
+  //  ANSWER — toelichting boven opties, handmatige VOLGENDE knop
   // ============================================================
   function showAnswerScreen(chosen, isCorrect) {
     var q     = QUESTIONS[S.qIndex];
     var isTF  = (q.type === 'truefalse');
     var pct   = ((S.qIndex + 1) / QUESTIONS.length * 100).toFixed(1) + '%';
-    var timeout = (chosen === -1);
 
-    var fbClass, fbLabel;
-    if (isCorrect) {
-      fbClass = 'feedback--good';
-      fbLabel = 'YES! GOED ANTWOORD! \uD83C\uDF89';
-    } else if (timeout) {
-      fbClass = 'feedback--timeout';
-      fbLabel = 'TE LAAT! MAAR ZO ZIT HET:';
-    } else {
-      fbClass = 'feedback--bad';
-      fbLabel = 'BIJNA GOED! ZO ZIT HET ECHT:';
-    }
+    var fbClass = isCorrect ? 'feedback--good' : 'feedback--bad';
+    var fbLabel = isCorrect
+      ? 'YES! GOED ANTWOORD! \uD83C\uDF89'
+      : 'BIJNA GOED! ZO ZIT HET ECHT:';
 
     var optBtns = q.options.map(function(opt, i) {
       var cls = 'option-btn ';
@@ -763,8 +695,6 @@
       ]);
     });
 
-    var nextHint = el('div', { className: 'next-hint' }, [txt('Verder in ' + ANS_PAUSE + '...')]);
-
     clear();
     var screen = el('div', { className: 'screen screen--question' }, [
       el('div', { className: 'progress-track' }, [
@@ -775,27 +705,20 @@
           txt('Vraag ' + (S.qIndex + 1) + ' van ' + QUESTIONS.length)
         ])
       ]),
-      el('div', { style: 'height:5px; margin-bottom:1.25rem;' }),
       el('div', { className: 'question-text' }, [txt(q.question)]),
-      el('div', { className: 'options' + (isTF ? ' options--tf' : '') }, optBtns),
+      // Toelichting boven de antwoordopties (groter)
       el('div', { className: 'feedback ' + fbClass }, [
         el('div', { className: 'feedback-label' }, [txt(fbLabel)]),
         el('div', { className: 'feedback-text' }, [txt(q.explanation)])
       ]),
-      nextHint
+      // Antwoordopties verkleind (review mode)
+      el('div', { className: 'options options--review' + (isTF ? ' options--tf' : '') }, optBtns),
+      // Handmatige volgende-knop
+      el('button', { className: 'btn', style: 'width:100%;margin-top:1rem;', onclick: advanceAfterAnswer }, [
+        txt('VOLGENDE \u2192')
+      ])
     ]);
     app.appendChild(screen);
-
-    var cd = ANS_PAUSE;
-    S._tick = setInterval(function() {
-      cd--;
-      nextHint.textContent = cd > 0 ? ('Verder in ' + cd + '...') : 'Laden...';
-      if (cd <= 0) {
-        clearInterval(S._tick);
-        S._tick = null;
-        advanceAfterAnswer();
-      }
-    }, 1000);
   }
 
   function advanceAfterAnswer() {
@@ -843,7 +766,6 @@
   function renderEmail() {
     clear();
 
-    // Input element — waarde wordt programmatisch gezet, NIET via innerHTML
     var emailInput = el('input', {
       type: 'email',
       className: 'email-input',
@@ -852,7 +774,6 @@
       inputmode: 'email',
       oninput: function(e) { S.email = e.target.value.trim(); }
     });
-    // Zet vorige waarde veilig via .value (geen HTML injection mogelijk)
     emailInput.value = S.email;
 
     var screen = el('div', { className: 'screen screen--email' }, [
@@ -863,13 +784,13 @@
       ]),
       emailInput,
       el('button', { className: 'btn', onclick: function() { submitEmail(false); } }, [
-        txt('STUUR MIJ UPDATES!')
+        txt('STUUR & BEKIJK SCORE \u2192')
       ]),
       el('p', { className: 'email-privacy' }, [
         txt('We gebruiken je e-mail alleen voor FREE FASHION nieuws. Je kunt je altijd afmelden.')
       ]),
       el('button', { className: 'btn-skip', onclick: function() { submitEmail(true); } }, [
-        txt('Overslaan \u2192')
+        txt('OVERSLAAN & BEKIJK SCORE \u2192')
       ])
     ]);
     app.appendChild(screen);
@@ -890,7 +811,7 @@
         return;
       }
     }
-    sendToFormspree();
+    sendToSheets();
     S.screen = 'end';
     render();
   }
@@ -905,19 +826,16 @@
     var title, sub, tip, tipClass;
 
     if (score < 5) {
-      // Variant 1: minder dan 5 goed
       title = 'GOED DAT JE\nMEEDEED! \uD83D\uDC4B';
       sub   = 'Wist je dat FREE FASHION medewerkers je alles kunnen vertellen over duurzame mode en wat jij zelf kunt doen?';
       tip   = '\uD83D\uDCAC Spreek een FREE FASHION medewerker aan voor persoonlijke tips!';
       tipClass = 'end-tip';
     } else if (score <= 8) {
-      // Variant 2: 5-8 goed
       title = 'WAUW, LEKKER\nOP WEG! \uD83D\uDCA1';
       sub   = 'Je weet al veel \u2014 en er valt nog meer te ontdekken. Er zijn geweldige podcasts en documentaires over duurzame mode!';
       tip   = '\uD83C\uDFA7 Tip: zoek op \u201eThe True Cost\u201f (docu) of \u201eWardrobe Crisis\u201f (podcast)';
       tipClass = 'end-tip end-tip--blue';
     } else {
-      // Variant 3: meer dan 8 goed
       title = 'WAT BEN JE\nGOED OP DE\nHOOGTE! \uD83C\uDFC6';
       sub   = 'Jij snapt hoe de mode-industrie werkt \u2014 en dat maakt je een krachtige stem voor verandering.';
       tip   = '\uD83D\uDDE3\uFE0F Vertel dit verhaal door aan anderen! Samen vergroten we de impact.';
@@ -946,28 +864,26 @@
 
   function restartQuiz() {
     stopTimers();
-    _submitted = false; // sta nieuwe inzending toe bij opnieuw spelen
+    _submitted = false;
     S = {
       screen: 'welcome', qIndex: 0, answers: [],
-      email: '', sessionId: uid(), _tick: null, _auto: null
+      email: '', sessionId: uid(), _auto: null
     };
     render();
   }
 
   // ============================================================
-  //  FORMSPREE SUBMIT
+  //  GOOGLE SHEETS SUBMIT
   // ============================================================
   var _submitted = false; // voorkom dubbele inzendingen
 
-  function sendToFormspree() {
+  function sendToSheets() {
     if (_submitted) return;
-    if (!FORMSPREE_URL || FORMSPREE_URL === 'VULHIERINZELF') return;
+    if (!SHEETS_URL || SHEETS_URL === 'VULHIERINZELF') return;
     _submitted = true;
 
     var score = S.answers.filter(function(a) { return a.isCorrect; }).length;
     var payload = {
-      _gotcha: '',  // honeypot: bots vullen dit in, echte gebruikers niet
-      _subject: 'FREE FASHION Quiz \u2014 score ' + score + '/' + QUESTIONS.length,
       session_id: S.sessionId,
       score: score + ' / ' + QUESTIONS.length,
       email: S.email || '(niet opgegeven)'
@@ -975,9 +891,7 @@
 
     S.answers.forEach(function(a) {
       var q = QUESTIONS[a.qIndex];
-      var chosenText = a.chosen === -1
-        ? 'Niet geantwoord (timeout)'
-        : (q.options[a.chosen] || '?');
+      var chosenText = q.options[a.chosen] || '?';
       var correctText = q.options[q.correct];
       var key = 'vraag_' + (a.qIndex + 1);
       payload[key] = a.isCorrect
@@ -985,9 +899,10 @@
         : ('\u2717 ' + chosenText + ' (correct: ' + correctText + ')');
     });
 
-    fetch(FORMSPREE_URL, {
+    fetch(SHEETS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     }).catch(function() { /* silent: quiz werkt ook offline */ });
   }
@@ -1008,7 +923,6 @@
   try {
     render();
   } catch (e) {
-    // Toon foutmelding als de quiz niet kan starten
     var errDiv = document.createElement('div');
     errDiv.style.cssText = 'color:#ef4444;padding:2rem;font-family:Arial;font-size:0.9rem;';
     errDiv.textContent = 'Quiz kon niet starten. Fout: ' + e.message;
