@@ -450,7 +450,7 @@
   //  Verander VULHIERINZELF naar jouw Google Apps Script URL
   //  Zie setup-instructies.md voor uitleg
   // ============================================================
-  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxVEnIRVZBhZX5gqRiOkrW7VxktDrmH3_uNxAPm-PwRmmMzrwSEN7sWrQmtpiWZy81l/exec';
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyJ72llBinnrGmp4UqoVX2jy_rA6oOt3tJPMaNv5B4CedHX4Ep59FiQgVhaFaz-MyRE/exec';
 
   // ============================================================
   //  QUIZ DATA — alle content is hier statisch gedefinieerd
@@ -901,8 +901,7 @@
 
     fetch(SHEETS_URL, {
       method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }).catch(function() { /* silent: quiz werkt ook offline */ });
   }
