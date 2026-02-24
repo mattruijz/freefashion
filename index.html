@@ -884,6 +884,7 @@
 
     var score = S.answers.filter(function(a) { return a.isCorrect; }).length;
     var payload = {
+      token: 'FF2025',   // eenvoudige toegangssleutel — script weigert verzoeken zonder dit token
       session_id: S.sessionId,
       score: score + ' / ' + QUESTIONS.length,
       email: S.email || '(niet opgegeven)'
@@ -899,11 +900,11 @@
         : ('\u2717 ' + chosenText + ' (correct: ' + correctText + ')');
     });
 
-    fetch(SHEETS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).catch(function() { /* silent: quiz werkt ook offline */ });
+    // GET ipv POST: Google Apps Script redirect zet POST om naar GET waardoor
+    // doPost nooit wordt aangeroepen. Met GET + URL-parameter werkt het wel.
+    var url = SHEETS_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
+    fetch(url, { method: 'GET', mode: 'no-cors' })
+      .catch(function() { /* silent: quiz werkt ook offline */ });
   }
 
   // ============================================================
