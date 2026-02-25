@@ -475,21 +475,21 @@
       question: 'Er is genoeg kleding op de wereld om de komende 6 generaties te kleden.',
       options: ['ECHT WAAR', 'KAN NIET WAAR ZIJN'],
       correct: 0,
-      explanation: 'Precies waarom FREE FASHION bestaat, we hebben genoeg dus laten we het delen.'
+      explanation: 'Echt waar. Precies waarom FREE FASHION bestaat, we hebben genoeg dus laten we het delen.'
     },
     {
       type: 'abc',
-      question: 'Bijna 60% van alle kleding is gemaakt van... ja wat eigenlijk?',
+      question: 'Bijna 60% van alle kleding is gemaakt van... ja, wat eigenlijk?',
       options: ['Vezels van planten', 'Plastic van aardolie', 'Gerecycled katoen'],
       correct: 1,
-      explanation: 'Polyester, nylon en acryl zijn andere woorden voor plastic dat gemaakt wordt van aardolie. Dat verklaart ook al die microplastics in ons water en onze kleding.'
+      explanation: 'Plastic, ook wel polyester, nylon en acryl, dit wordt gemaakt van aardolie. Dat verklaart ook al die microplastics in ons water en onze kleding.'
     },
     {
       type: 'truefalse',
       question: 'De kledingindustrie stoot meer CO2 uit dan de volledige luchtvaartindustrie.',
       options: ['ECHT WAAR', 'KAN NIET WAAR ZIJN'],
       correct: 0,
-      explanation: 'Ongeveer 8% van de wereldwijde CO2-uitstoot. Dat is meer dan de hele luchtvaart (3\u20135%) bij elkaar.'
+      explanation: 'Echt waar, ongeveer 8% van de wereldwijde CO2-uitstoot. Dat is meer dan de hele luchtvaart (3\u20135%) bij elkaar.'
     },
     {
       type: 'abc',
@@ -503,7 +503,7 @@
       question: 'Hoeveel liter water kost het om een spijkerbroek te maken?',
       options: ['Ongeveer 700 liter', 'Ongeveer 3.000 liter', 'Meer dan 8.000 liter'],
       correct: 2,
-      explanation: 'Meer dan 8.000 liter \u2014 dat is zo\u2019n 10 jaar drinkwater voor een persoon! Een katoenen T-shirt kost 2,5 jaar drinkwater per persoon.'
+      explanation: 'Meer dan 8.000 liter, dat is zo\u2019n 10 jaar drinkwater voor 1 persoon! Een katoenen T-shirt kost 2,5 jaar drinkwater per persoon.'
     },
     {
       type: 'truefalse',
@@ -538,7 +538,7 @@
       question: 'Waar staat FREE FASHION eigenlijk voor?',
       options: ['Gratis kleding uitdelen', 'Alle niet-gedragen kleding in de wereld', 'Een outlet voor overtollige voorraden'],
       correct: 1,
-      explanation: 'WE ZIJN DUS HET GROOTSTE MODEMERK DAT STIEKEM AL LANG BESTAAT!'
+      explanation: 'Alle ongedragen kleding in de wereld. WE ZIJN DUS HET GROOTSTE MODEMERK DAT STIEKEM AL LANG BESTAAT!'
     }
   ];
 
@@ -728,7 +728,7 @@
       showInterlude(INTERLUDES[justAnswered]);
     } else if (S.qIndex >= QUESTIONS.length - 1) {
       S.qIndex++;
-      S.screen = 'email';
+      S.screen = 'end';
       render();
     } else {
       S.qIndex++;
@@ -755,7 +755,7 @@
     app.appendChild(screen);
 
     S._auto = setTimeout(function() {
-      S.screen = S.qIndex >= QUESTIONS.length ? 'email' : 'question';
+      S.screen = S.qIndex >= QUESTIONS.length ? 'end' : 'question';
       render();
     }, INT_PAUSE * 1000);
   }
@@ -783,14 +783,11 @@
         txt('Wil je nieuws ontvangen over FREE FASHION? Laat dan je e-mailadres achter \u2014 helemaal vrijblijvend!')
       ]),
       emailInput,
-      el('button', { className: 'btn', onclick: function() { submitEmail(false); } }, [
-        txt('STUUR & BEKIJK JE SCORE \u2192')
-      ]),
       el('p', { className: 'email-privacy' }, [
         txt('We gebruiken je e-mail alleen voor FREE FASHION nieuws. Je kunt je altijd afmelden.')
       ]),
-      el('button', { className: 'btn-skip', onclick: function() { submitEmail(true); } }, [
-        txt('OVERSLAAN & BEKIJK SCORE \u2192')
+      el('button', { className: 'btn', onclick: submitEmailAndRestart }, [
+        txt('OPNIEUW SPELEN')
       ])
     ]);
     app.appendChild(screen);
@@ -798,10 +795,10 @@
     setTimeout(function() { emailInput.focus(); }, 300);
   }
 
-  function submitEmail(skip) {
-    if (!skip && S.email) {
+  function submitEmailAndRestart() {
+    // Valideer e-mail als er iets is ingevuld
+    if (S.email) {
       var inp = document.querySelector('.email-input');
-      // Gebruik browser's ingebouwde e-mailvalidatie + max lengte check
       if (!inp || !inp.checkValidity() || S.email.length > 254) {
         if (inp) {
           inp.classList.add('invalid');
@@ -810,36 +807,57 @@
         }
         return;
       }
+      // Stuur email als aparte rij naar het sheet (zelfde session_id)
+      sendEmailUpdate();
     }
-    sendToSheets();
-    S.screen = 'end';
-    render();
+    restartQuiz();
+  }
+
+  function sendEmailUpdate() {
+    if (!S.email || !SHEETS_URL || SHEETS_URL === 'VULHIERINZELF') return;
+    var payload = {
+      token: 'FF2025',
+      session_id: S.sessionId,
+      score: '',
+      email: S.email
+    };
+    var url = SHEETS_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
+    fetch(url, { method: 'GET', mode: 'no-cors' })
+      .catch(function() {});
   }
 
   // ============================================================
   //  END — 3 varianten op basis van score
   // ============================================================
   function renderEnd() {
+    sendToSheets();
+
     var score = S.answers.filter(function(a) { return a.isCorrect; }).length;
     var total = QUESTIONS.length;
 
-    var title, sub, tip, tipClass;
+    var title, sub, tip, tipClass, btnText, btnAction;
 
     if (score < 5) {
       title = 'WAT GOED DAT\nJE MEEDEED!';
       sub   = 'Wist je dat FREE FASHION medewerkers je alles kunnen vertellen over duurzame mode en wat jij zelf kunt doen?';
       tip   = 'Spreek een FREE FASHION medewerker aan voor meer tips!';
       tipClass = 'end-tip';
+      btnText = 'OPNIEUW SPELEN';
+      btnAction = restartQuiz;
     } else if (score <= 8) {
       title = 'WAUW, JIJ BENT\nLEKKER OP WEG!';
       sub   = 'Je weet al veel \u2014 en er valt nog meer te ontdekken. Er zijn super goeie podcasts en documentaires over duurzame mode!';
       tip   = 'Tip: zoek op \u201eThe True Cost\u201f (docu) of \u201eDit is een goede podcast\u201f (podcast)';
       tipClass = 'end-tip end-tip--blue';
+      btnText = 'OPNIEUW SPELEN';
+      btnAction = restartQuiz;
     } else {
       title = 'WAT BEN JE\nGOED OP DE\nHOOGTE!';
       sub   = 'Jij snapt hoe de mode-industrie werkt \u2014 en dat maakt je een krachtige stem voor verandering.';
       tip   = 'Vertel dit verhaal door aan anderen! Samen vergroten we de impact.';
       tipClass = 'end-tip end-tip--blue';
+      btnText = 'BLIJF OP DE HOOGTE VAN FREE FASHION';
+      btnAction = function() { S.screen = 'email'; render(); };
     }
 
     var titleLines = title.split('\n');
@@ -856,7 +874,7 @@
       el('div', { className: 'end-title' }, titleChildren),
       el('p', { className: 'end-sub' }, [txt(sub)]),
       el('div', { className: tipClass }, [txt(tip)]),
-      el('button', { className: 'btn', onclick: restartQuiz }, [txt('OPNIEUW SPELEN')]),
+      el('button', { className: 'btn', onclick: btnAction }, [txt(btnText)]),
       el('div', { className: 'ff-footer' }, [txt('THIS IS FREE FASHION')])
     ]);
     app.appendChild(screen);
@@ -919,6 +937,16 @@
       case 'end':      renderEnd();      break;
     }
   }
+
+  // Stuur data naar Sheets als de gebruiker de pagina verlaat (ook halverwege de quiz)
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden' && S.answers.length > 0) {
+      sendToSheets();
+    }
+  });
+  window.addEventListener('pagehide', function() {
+    if (S.answers.length > 0) sendToSheets();
+  });
 
   try {
     render();
