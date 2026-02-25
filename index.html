@@ -351,6 +351,37 @@
     .email-input:focus { border-color: var(--white); }
     .email-input.invalid { border-color: var(--red); }
 
+    .email-row {
+      display: flex;
+      width: 100%;
+      max-width: 320px;
+    }
+    .email-row .email-input {
+      flex: 1;
+      max-width: none;
+      text-align: left;
+      border-right: none;
+    }
+    .email-row:focus-within .email-input,
+    .email-row:focus-within .email-send { border-color: var(--white); }
+    .email-row .email-input.invalid,
+    .email-row .email-input.invalid + .email-send { border-color: var(--red); }
+    .email-send {
+      background: transparent;
+      color: var(--white);
+      border: 3px solid rgba(255,255,255,0.35);
+      border-left: none;
+      padding: 0 1.1rem;
+      font-size: 1.4rem;
+      line-height: 1;
+      cursor: pointer;
+      touch-action: manipulation;
+      flex-shrink: 0;
+      -webkit-appearance: none;
+      transition: background 0.12s, color 0.12s;
+    }
+    .email-send:active { background: var(--white); color: var(--black); }
+
     .email-privacy {
       font-size: clamp(0.6rem, 2.2vw, 0.7rem);
       opacity: 0.35;
@@ -782,7 +813,10 @@
       el('p', { className: 'email-sub' }, [
         txt('Wil je nieuws ontvangen over FREE FASHION? Laat dan je e-mailadres achter \u2014 helemaal vrijblijvend!')
       ]),
-      emailInput,
+      el('div', { className: 'email-row' }, [
+        emailInput,
+        el('button', { className: 'email-send', onclick: submitEmailAndRestart }, [txt('\u2192')])
+      ]),
       el('p', { className: 'email-privacy' }, [
         txt('We gebruiken je e-mail alleen voor FREE FASHION nieuws. Je kunt je altijd afmelden.')
       ]),
