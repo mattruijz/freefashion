@@ -902,8 +902,8 @@
       el('div', { className: 'end-title' }, titleChildren),
       el('p', { className: 'end-sub' }, [txt(sub)]),
       el('div', { className: tipClass }, [txt(tip)]),
-      el('button', { className: 'btn', onclick: restartQuiz }, [txt('OPNIEUW SPELEN')]),
-      el('button', { className: 'btn-skip', onclick: function() { S.screen = 'email'; render(); } }, [txt('BLIJF OP DE HOOGTE')]),
+      el('button', { className: 'btn', onclick: function() { S.screen = 'email'; render(); } }, [txt('BLIJF OP DE HOOGTE')]),
+      el('button', { className: 'btn-skip', onclick: restartQuiz }, [txt('OPNIEUW SPELEN')]),
       el('div', { className: 'ff-footer' }, [txt('THIS IS FREE FASHION')])
     ]);
     app.appendChild(screen);
