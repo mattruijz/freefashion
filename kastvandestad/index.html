@@ -85,16 +85,15 @@
 
     /* Welcome: same look as the back of the membercard */
     .welcome { background: var(--ink); color: var(--paper); justify-content: space-between; }
-    .welcome .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
-    .unlocked { font-size: clamp(44px, 7vw, 96px); line-height: 1.05; text-transform: uppercase; }
-    .family { color: var(--orange); font-size: clamp(20px, 2.6vw, 34px); text-transform: uppercase; margin-top: 18px; letter-spacing: .02em; }
-    .name { font-size: clamp(56px, 10vw, 140px); font-weight: 700; line-height: 1; text-transform: uppercase; margin-top: 10px; overflow-wrap: anywhere; }
+    .family { color: var(--orange); font-size: clamp(44px, 7vw, 96px); line-height: 1.05; text-transform: uppercase; }
+    .name { font-size: clamp(56px, 10vw, 140px); font-weight: 700; line-height: 1; text-transform: uppercase; margin-top: 18px; overflow-wrap: anywhere; }
     .enjoy { font-size: clamp(20px, 2.4vw, 30px); margin-top: 28px; }
     .countdown { height: 6px; background: var(--orange); width: 100%; max-width: 640px; transform-origin: left; }
     .welcome .logo { margin-top: 28px; }
     .notme {
       border: 2px solid var(--paper); color: var(--paper); border-radius: 4px;
       padding: 16px 22px; font-size: clamp(15px, 1.5vw, 18px); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
+      margin-bottom: 24px;
     }
     .notme:active { background: rgba(255,255,255,.15); }
 
@@ -119,7 +118,6 @@
       .start-left { gap: 40px; justify-content: flex-start; }
       .keypad { height: 46vh; max-width: 560px; justify-self: center; }
       .start-left .rule { display: none; }
-      .welcome .top { flex-direction: column-reverse; }
     }
     @media (max-width: 480px) {
       .digit { width: 52px; height: 68px; font-size: 42px; }
@@ -226,16 +224,13 @@
     function renderWelcome() {
       var r = S.result;
       return el('div', { class: 'screen welcome' }, [
-        el('div', { class: 'top' }, [
-          el('div', null, [
-            el('div', { class: 'unlocked' }, ['Unlocked.']),
-            el('div', { class: 'family' }, [r.name ? 'Welcome to the family,' : 'Welcome to the family!']),
-            r.name ? el('div', { class: 'name' }, [r.name + '!']) : null,
-            el('div', { class: 'enjoy' }, ['Enjoy your endless wardrobe.'])
-          ]),
-          el('button', { class: 'notme', onclick: notMe }, [r.name ? 'Not ' + r.name + '? Go back' : 'Not you? Go back'])
+        el('div', null, [
+          el('div', { class: 'family' }, [r.name ? 'Welcome to the family,' : 'Welcome to the family!']),
+          r.name ? el('div', { class: 'name' }, [r.name + '!']) : null,
+          el('div', { class: 'enjoy' }, ['Enjoy your endless wardrobe.'])
         ]),
         el('div', null, [
+          el('button', { class: 'notme', onclick: notMe }, [r.name ? 'Not ' + r.name + '? Go back' : 'Not you? Go back']),
           el('div', { class: 'countdown', id: 'countdown' }),
           logo()
         ])
