@@ -7,7 +7,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Free Fashion Plus">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#000000">
   <meta name="robots" content="noindex">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://script.google.com https://script.googleusercontent.com; img-src 'self' data:; base-uri 'none'; form-action 'none';">
   <title>Free Fashion Plus</title>
@@ -17,17 +17,17 @@
       --orange: #FF751F;
       --ink: #000000;
       --paper: #ffffff;
-      --muted: #6f6f6f;
-      --key: #f3f3f3;
-      --key-active: #e2e2e2;
+      --muted: #8c8c8c;
+      --key: #1c1c1c;
+      --key-active: #333333;
       --gutter: clamp(24px, 5vw, 72px);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
     body {
       font-family: 'Arimo', Arial, Helvetica, sans-serif;
-      background: var(--paper);
-      color: var(--ink);
+      background: var(--ink);
+      color: var(--paper);
       overflow: hidden;
       -webkit-user-select: none;
       user-select: none;
@@ -61,7 +61,7 @@
     .digits { display: flex; align-items: baseline; gap: 12px; }
     .digit {
       width: clamp(60px, 7vw, 88px); height: clamp(78px, 9vw, 112px);
-      border-bottom: 6px solid var(--ink);
+      border-bottom: 6px solid var(--paper);
       font-size: clamp(48px, 6vw, 80px); font-weight: 700;
       display: flex; align-items: center; justify-content: center;
     }
@@ -80,7 +80,7 @@
     .key:active { background: var(--key-active); }
     .key.go { background: var(--orange); color: var(--paper); font-size: clamp(18px, 1.8vw, 22px); letter-spacing: .06em; text-transform: uppercase; }
     .key.go:active { background: #e5641a; }
-    .key.go:disabled { background: #ffc7a3; }
+    .key.go:disabled { background: #5c2f12; color: rgba(255,255,255,.55); }
     .key.del { font-size: clamp(16px, 1.6vw, 20px); font-weight: 400; text-transform: uppercase; letter-spacing: .06em; }
 
     /* Welcome: same look as the back of the membercard */
@@ -136,7 +136,7 @@
     // =========================================================
     // Web-app URL van het Apps Script (zie kastvandestad-apps-script/SETUP.md).
     // Leeg laten = demo-modus met nepleden. Ook te forceren met ?demo in de URL.
-    var SCRIPT_URL = '';
+    var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbytOeM09yVBGVRe4vlW2QBL33gy2szAUG5IF63gnai4H0vWOBKQj4btcrDjCSOGJHA/exec';
     var TOKEN = 'KVDS2026';
 
     var WELCOME_SECONDS = 10;   // welkomstscherm blijft zo lang staan
