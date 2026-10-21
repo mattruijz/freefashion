@@ -462,12 +462,6 @@
       });
     }
 
-    // Elke 5 minuten: ledenlijst verversen (houdt het script meteen 'warm')
-    // en eventueel achtergebleven check-ins alsnog versturen.
-    function tick() {
-      refreshMembers().catch(function (err) { console.error(err); });
-      flush();
-    }
 
     // =========================================================
     //  INIT
@@ -484,8 +478,10 @@
     var saved = restore(MEMBERS_KEY);
     if (saved) setMembers(saved);
     render();
-    tick();
-    setInterval(tick, 5 * 60 * 1000);
+    // Ledenlijst alleen bij het laden ophalen (de pagina herlaadt elke nacht);
+    // eventueel achtergebleven check-ins van vóór een herstart alsnog versturen.
+    refreshMembers().catch(function (err) { console.error(err); });
+    flush();
   })();
   </script>
 </body>
