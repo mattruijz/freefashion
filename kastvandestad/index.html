@@ -227,7 +227,8 @@
         el('div', null, [
           el('div', { class: 'family' }, [r.name ? 'Welcome to the family,' : 'Welcome to the family!']),
           r.name ? el('div', { class: 'name' }, [r.name + '!']) : null,
-          el('div', { class: 'enjoy' }, ['Enjoy your endless wardrobe.'])
+          el('div', { class: 'enjoy' }, ['Enjoy your endless wardrobe.']),
+          el('button', { class: 'btn', onclick: reset }, ['Next check-in \u2192'])
         ]),
         el('div', null, [
           el('button', { class: 'notme', onclick: notMe }, [r.name ? 'Not ' + r.name + '? Go back' : 'Not you? Go back']),
@@ -301,15 +302,30 @@
       }
       var nr = ('000' + n).slice(-3);
       clearTimeout(S.idleTimer);
+
+      // Snel pad: nummer staat in de lokale ledenlijst → meteen tonen,
+      // de check-in gaat op de achtergrond naar het sheet.
+      var m = members && members[nr];
+      if (m) {
+        S.result = { nr: nr, name: m.name, id: newId() };
+        enqueue({ action: 'checkin', nr: nr, id: S.result.id, ts: Date.now() });
+        if (m.active) show('welcome', WELCOME_SECONDS);
+        else show('inactive', MESSAGE_SECONDS);
+        return;
+      }
+
+      // Niet in de lokale lijst (of nog geen lijst): online navragen,
+      // misschien is deze deelnemer net toegevoegd in het sheet.
       S.screen = 'loading';
       render();
-
-      call({ action: 'checkin', nr: nr }).then(function (res) {
-        S.result = { nr: nr, name: res.name || '', id: res.id };
+      var id = newId();
+      call({ action: 'checkin', nr: nr, id: id, ts: Date.now() }).then(function (res) {
+        S.result = { nr: nr, name: res.name || '', id: res.id || id };
         if (res.status === 'ok') show('welcome', WELCOME_SECONDS);
         else if (res.status === 'inactive') show('inactive', MESSAGE_SECONDS);
         else if (res.status === 'unknown') show('unknown', MESSAGE_SECONDS);
         else throw new Error(res.message || 'Unexpected response');
+        if (res.status !== 'unknown') refreshMembers().catch(function () {});
       }).catch(function (err) {
         console.error(err);
         S.result = { nr: nr };
@@ -319,8 +335,12 @@
 
     function notMe() {
       var id = S.result && S.result.id;
-      if (id) call({ action: 'notme', id: id }).catch(function (err) { console.error(err); });
+      if (id) enqueue({ action: 'notme', id: id });
       reset();
+    }
+
+    function newId() {
+      return (Date.now().toString(36) + Math.random().toString(36).slice(2) + '000000').slice(-12);
     }
 
     function show(screen, seconds) {
@@ -361,23 +381,92 @@
         });
     }
 
+    // =========================================================
+    //  LEDENLIJST — lokaal bewaard, zodat unlocken direct gaat
+    // =========================================================
+    var MEMBERS_KEY = 'kvds-members';
+    var QUEUE_KEY = 'kvds-queue';
+    var members = null; // { '001': { name: 'Marieke', active: true }, ... }
+
+    // localStorage kan ontbreken of falen; de pagina werkt dan gewoon online
+    function save(key, value) {
+      if (DEMO) return;
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+    }
+    function restore(key) {
+      if (DEMO) return null;
+      try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
+    }
+
+    function setMembers(list) {
+      var map = {};
+      list.forEach(function (m) { map[m[0]] = { name: m[1] || '', active: !!m[2] }; });
+      members = map;
+    }
+
+    function refreshMembers() {
+      return call({ action: 'members' }).then(function (res) {
+        if (res.status !== 'ok' || !res.members) throw new Error(res.message || 'No member list');
+        setMembers(res.members);
+        save(MEMBERS_KEY, res.members);
+      });
+    }
+
+    // =========================================================
+    //  WACHTRIJ — check-ins en "Not you?" gaan één voor één naar
+    //  het sheet; bij geen verbinding wordt het later opnieuw geprobeerd.
+    // =========================================================
+    var queue = restore(QUEUE_KEY) || [];
+    var flushing = false;
+    var retryTimer = null;
+
+    function enqueue(params) {
+      queue.push(params);
+      save(QUEUE_KEY, queue);
+      flush();
+    }
+
+    function flush() {
+      if (flushing || !queue.length) return;
+      flushing = true;
+      call(Object.assign({}, queue[0])).then(function (res) {
+        if (res.status === 'error') console.error('Server refused', queue[0], res.message);
+        queue.shift();
+        save(QUEUE_KEY, queue);
+        flushing = false;
+        flush();
+      }).catch(function (err) {
+        console.error('Sending failed, retrying in 30 s', err);
+        flushing = false;
+        clearTimeout(retryTimer);
+        retryTimer = setTimeout(flush, 30000);
+      });
+    }
+
     function demoCall(params) {
       return new Promise(function (resolve) {
         setTimeout(function () {
+          if (params.action === 'members') {
+            return resolve({ status: 'ok', members: Object.keys(DEMO_MEMBERS).map(function (k) {
+              return [k, DEMO_MEMBERS[k], 1];
+            }).concat([['999', 'Demo', 0]]) });
+          }
           if (params.action === 'notme') return resolve({ status: 'ok' });
           if (params.nr === '999') return resolve({ status: 'inactive' });
           if (params.nr === '404') return resolve({ status: 'error', message: 'demo' });
           if (Object.prototype.hasOwnProperty.call(DEMO_MEMBERS, params.nr)) {
-            return resolve({ status: 'ok', name: DEMO_MEMBERS[params.nr], id: 'demo' });
+            return resolve({ status: 'ok', name: DEMO_MEMBERS[params.nr], id: params.id });
           }
           resolve({ status: 'unknown' });
         }, 700);
       });
     }
 
-    // Houdt het Apps Script 'warm' zodat de eerste check-in niet traag is
-    function keepWarm() {
-      if (!DEMO && S.screen === 'start') fetch(SCRIPT_URL + '?action=ping').catch(function () {});
+    // Elke 5 minuten: ledenlijst verversen (houdt het script meteen 'warm')
+    // en eventueel achtergebleven check-ins alsnog versturen.
+    function tick() {
+      refreshMembers().catch(function (err) { console.error(err); });
+      flush();
     }
 
     // =========================================================
@@ -392,9 +481,11 @@
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
     document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
+    var saved = restore(MEMBERS_KEY);
+    if (saved) setMembers(saved);
     render();
-    keepWarm();
-    setInterval(keepWarm, 4 * 60 * 1000);
+    tick();
+    setInterval(tick, 5 * 60 * 1000);
   })();
   </script>
 </body>
