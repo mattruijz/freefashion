@@ -110,6 +110,61 @@
     .spinner { width: 64px; height: 64px; border: 6px solid var(--key); border-top-color: var(--orange); border-radius: 50%; animation: spin .8s linear infinite; margin-top: 36px; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ===== Lanceermodus ===== */
+    .keyrow { display: flex; align-items: center; gap: 14px; margin-top: 28px; flex-wrap: wrap; }
+    .keyslot {
+      width: 44px; height: 44px; border-radius: 50%; border: 3px solid #444;
+      display: flex; align-items: center; justify-content: center; color: transparent;
+      transition: background .3s, border-color .3s;
+    }
+    .keyslot svg { width: 22px; height: 22px; }
+    .keyslot.on { background: var(--orange); border-color: var(--orange); color: var(--paper); }
+    .keylabel { font-size: clamp(14px, 1.5vw, 18px); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+    .keylabel strong { color: var(--paper); font-weight: 700; }
+
+    .launch { justify-content: space-between; }
+    .launch h1 { font-weight: 400; font-size: clamp(40px, 6vw, 76px); line-height: 1.05; text-transform: uppercase; }
+    .launch h1 .accent { color: var(--orange); }
+    .launch .sub { font-size: clamp(18px, 2.2vw, 26px); margin-top: 16px; color: var(--muted); }
+    .holdrow { display: flex; justify-content: center; gap: clamp(28px, 7vw, 120px); flex-wrap: wrap; }
+    .hold { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .ring {
+      --p: 0;
+      width: clamp(180px, 24vw, 280px); aspect-ratio: 1; border-radius: 50%;
+      background: conic-gradient(var(--paper) calc(var(--p) * 1turn), #2a2a2a 0);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .holdbtn {
+      width: calc(100% - 22px); height: calc(100% - 22px); border-radius: 50%;
+      background: var(--orange); color: var(--paper);
+      font-size: clamp(20px, 2.4vw, 30px); font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+      touch-action: none; -webkit-user-select: none; user-select: none;
+      transition: transform .15s, box-shadow .15s;
+      padding: 0 12px; overflow-wrap: anywhere;
+    }
+    .holdbtn.held { transform: scale(.94); box-shadow: 0 0 60px rgba(255,117,31,.55); }
+    .holdname { font-size: clamp(14px, 1.5vw, 18px); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+    .holdhint { text-align: center; font-size: clamp(18px, 2vw, 24px); min-height: 1.4em; }
+
+    .count { align-items: center; justify-content: center; }
+    .count .num { font-size: clamp(160px, 30vw, 360px); font-weight: 700; color: var(--orange); line-height: 1; animation: pop 1s ease-out; }
+    @keyframes pop { 0% { transform: scale(1.6); opacity: 0; } 25% { transform: scale(1); opacity: 1; } 85% { opacity: 1; } 100% { transform: scale(.85); opacity: 0; } }
+
+    .reveal { justify-content: space-between; position: relative; overflow: hidden; }
+    .reveal .unl { color: var(--orange); font-size: clamp(22px, 3vw, 40px); text-transform: uppercase; letter-spacing: .04em; }
+    .reveal .big { font-size: clamp(56px, 9.5vw, 136px); font-weight: 700; line-height: .98; text-transform: uppercase; margin-top: 14px; }
+    .reveal .big .plus { color: var(--orange); }
+    .reveal .enjoy { margin-top: 30px; }
+    .reveal .bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+    .reveal .bottom .rule { flex: 1; min-width: 200px; }
+    .reveal > * { position: relative; z-index: 1; animation: rise .9s ease-out both; }
+    .reveal > *:nth-child(2) { animation-delay: .15s; }
+    .reveal > *:nth-child(3) { animation-delay: .3s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
+    .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 0; animation: none !important; }
+    .confetti i { position: absolute; top: -6vh; display: block; animation: fall linear forwards; }
+    @keyframes fall { to { transform: translate(var(--dx), 115vh) rotate(var(--rot)); } }
+
     .demo-badge { position: fixed; right: 12px; bottom: 10px; font-size: 12px; color: var(--muted); }
 
     /* Portrait iPad / phones: stack keypad under the text */
@@ -118,6 +173,7 @@
       .start-left { gap: 40px; justify-content: flex-start; }
       .keypad { height: 46vh; max-width: 560px; justify-self: center; }
       .start-left .rule { display: none; }
+      .ring { width: clamp(200px, 36vw, 300px); }
     }
     @media (max-width: 480px) {
       .digit { width: 52px; height: 68px; font-size: 42px; }
@@ -145,7 +201,14 @@
     var REQUEST_TIMEOUT_MS = 15000;
 
     var DEMO = !SCRIPT_URL || /[?&]demo\b/.test(location.search);
-    var DEMO_MEMBERS = { '001': 'Alex', '002': 'Sam', '042': 'Noor', '095': '' };
+    var DEMO_MEMBERS = { '001': 'Alex', '002': 'Sam', '042': 'Noor', '095': '', '101': 'Robin', '102': 'Kim' };
+
+    // Lanceermodus: aan met ?launch in de URL, of door 000 in te toetsen (nog eens 000 = uit).
+    // Beide sleutelhouders loggen in, daarna houden ze samen de knoppen ingedrukt.
+    var LAUNCH_KEYS = ['101', '102'];
+    var LAUNCH_CODE = '000';
+    var HOLD_SECONDS = 3;       // zo lang moeten beide knoppen tegelijk ingedrukt blijven
+    var REVEAL_SECONDS = 180;   // daarna gaat het scherm vanzelf naar normaal inchecken
 
     // =========================================================
     //  STATE
@@ -153,6 +216,7 @@
     var S = { screen: 'start', digits: '', result: null, timer: null, idleTimer: null };
     var loadedOn = new Date().toDateString();
     var lastScreen = null;
+    var L = { on: false, keys: {} };  // lanceerstatus; keys: { '101': 'Naam' }
 
     // =========================================================
     //  DOM helpers (geen innerHTML)
@@ -183,6 +247,33 @@
     // =========================================================
     //  SCREENS
     // =========================================================
+    function keyIcon() {
+      var ns = 'http://www.w3.org/2000/svg';
+      var svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor');
+      svg.setAttribute('stroke-width', '2.4');
+      svg.setAttribute('stroke-linecap', 'round');
+      var c = document.createElementNS(ns, 'circle');
+      c.setAttribute('cx', '8'); c.setAttribute('cy', '12'); c.setAttribute('r', '4');
+      var path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', 'M12 12h9M18 12v3M21 12v2');
+      svg.appendChild(c); svg.appendChild(path);
+      return svg;
+    }
+
+    function keyRow() {
+      var turned = turnedCount();
+      var slots = LAUNCH_KEYS.map(function (nr) {
+        return el('div', { class: 'keyslot' + (L.keys[nr] !== undefined ? ' on' : '') }, [keyIcon()]);
+      });
+      var label = turned === 0
+        ? el('div', { class: 'keylabel' }, [LAUNCH_KEYS.length + ' keys needed to unlock'])
+        : el('div', { class: 'keylabel' }, [el('strong', null, [turned + ' of ' + LAUNCH_KEYS.length]), ' keys turned']);
+      return el('div', { class: 'keyrow' }, slots.concat([label]));
+    }
+
     function renderStart() {
       var boxes = [];
       for (var i = 0; i < 3; i++) {
@@ -202,7 +293,8 @@
           el('div', null, [
             el('h1', { class: 'headline' }, ['Unlock your', el('br'), 'endless wardrobe ', el('span', { class: 'here' }, ['here'])]),
             el('div', { class: 'prompt' }, ['Enter your member No.']),
-            el('div', { class: 'digits', id: 'digits' }, boxes.concat([el('span', { class: 'of' }, ['/100'])]))
+            el('div', { class: 'digits', id: 'digits' }, boxes.concat([el('span', { class: 'of' }, ['/100'])])),
+            L.on ? keyRow() : null
           ]),
           el('div', { class: 'rule' })
         ]),
@@ -228,7 +320,8 @@
           el('div', { class: 'family' }, [r.name ? 'Welcome to the family,' : 'Welcome to the family!']),
           r.name ? el('div', { class: 'name' }, [r.name + '!']) : null,
           el('div', { class: 'enjoy' }, ['Enjoy your endless wardrobe.']),
-          el('button', { class: 'btn', onclick: reset }, ['Next check-in \u2192'])
+          r.key ? keyRow() : null,
+          el('button', { class: 'btn', onclick: reset }, [r.key && allKeysTurned() ? 'Ready to launch \u2192' : 'Next check-in \u2192'])
         ]),
         el('div', null, [
           el('button', { class: 'notme', onclick: notMe }, [r.name ? 'Not ' + r.name + '? Go back' : 'Not you? Go back']),
@@ -250,6 +343,65 @@
       ]);
     }
 
+    function renderLaunch() {
+      var holds = LAUNCH_KEYS.map(function (nr, i) {
+        var name = L.keys[nr] || ('Key ' + (i + 1));
+        return el('div', { class: 'hold' }, [
+          el('div', { class: 'ring', id: 'ring' + i }, [
+            el('button', { class: 'holdbtn', id: 'hold' + i, 'data-i': String(i) }, [name])
+          ]),
+          el('div', { class: 'holdname' }, ['Key ' + (i + 1)])
+        ]);
+      });
+      return el('div', { class: 'screen launch' }, [
+        logo(),
+        el('div', null, [
+          el('h1', null, ['Ready to ', el('span', { class: 'accent' }, ['unlock?'])]),
+          el('div', { class: 'sub' }, ['Press and hold both buttons together'])
+        ]),
+        el('div', { class: 'holdrow' }, holds),
+        el('div', { class: 'holdhint', id: 'holdhint' }),
+        el('div', { class: 'rule' })
+      ]);
+    }
+
+    function renderCount() {
+      return el('div', { class: 'screen count' }, [el('div', { class: 'num' }, [String(S.count)])]);
+    }
+
+    function renderReveal() {
+      return el('div', { class: 'screen reveal' }, [
+        el('div', null, [
+          el('div', { class: 'unl' }, ['Unlocked.']),
+          el('div', { class: 'big' }, ['Free Fashion ', el('span', { class: 'plus' }, ['Plus']), el('br'), 'is live'])
+        ]),
+        el('div', { class: 'enjoy' }, ['Enjoy your endless wardrobe.']),
+        el('div', { class: 'bottom' }, [
+          el('div', { class: 'rule' }),
+          el('button', { class: 'notme', onclick: reset }, ['Start check-ins \u2192'])
+        ]),
+        confetti()
+      ]);
+    }
+
+    function confetti() {
+      var colors = ['#FF751F', '#ffffff', '#FFB27F', '#FF751F'];
+      var pieces = [];
+      for (var i = 0; i < 140; i++) {
+        var w = 6 + Math.random() * 10;
+        pieces.push(el('i', { style:
+          'left:' + (Math.random() * 100).toFixed(1) + '%;' +
+          'width:' + w.toFixed(0) + 'px;height:' + (w * (0.4 + Math.random())).toFixed(0) + 'px;' +
+          'background:' + colors[i % colors.length] + ';' +
+          '--dx:' + ((Math.random() - 0.5) * 30).toFixed(0) + 'vw;' +
+          '--rot:' + (360 + Math.random() * 1080).toFixed(0) + 'deg;' +
+          'animation-duration:' + (3 + Math.random() * 4).toFixed(2) + 's;' +
+          'animation-delay:' + (Math.random() * 2.5).toFixed(2) + 's;'
+        }));
+      }
+      return el('div', { class: 'confetti', 'aria-hidden': 'true' }, pieces);
+    }
+
     function render() {
       var app = document.getElementById('app');
       var view;
@@ -257,15 +409,18 @@
       switch (S.screen) {
         case 'loading': view = renderLoading(); break;
         case 'welcome': view = renderWelcome(); break;
+        case 'launch': view = renderLaunch(); break;
+        case 'count': view = renderCount(); break;
+        case 'reveal': view = renderReveal(); break;
         case 'unknown': view = renderMessage('Hmm,', 'unknown number', 'We can’t find member No. ' + nr + '/100. Please check the number on the back of your card and try again.'); break;
         case 'inactive': view = renderMessage('Sorry,', 'card inactive', 'Member No. ' + nr + '/100 is not active right now. Please ask one of our team members.'); break;
         case 'error': view = renderMessage('Oops,', 'no connection', 'We couldn’t reach our member list. Please try again, or ask one of our team members to let you in.'); break;
         default: view = renderStart();
       }
-      if (S.screen !== lastScreen) view.classList.add('enter');
+      if (S.screen !== lastScreen || S.screen === 'count') view.classList.add('enter');
       lastScreen = S.screen;
       app.replaceChildren(view);
-      if (DEMO) app.appendChild(el('div', { class: 'demo-badge' }, ['Demo mode — try 001, 002, 042, 095']));
+      if (DEMO) app.appendChild(el('div', { class: 'demo-badge' }, ['Demo mode — try 001, 002, 042, 095 · launch: 000, then 101 + 102']));
     }
 
     // =========================================================
@@ -292,6 +447,7 @@
 
     function submit() {
       if (S.screen !== 'start' || !S.digits) return;
+      if (S.digits === LAUNCH_CODE) { toggleLaunch(); return; }
       var n = parseInt(S.digits, 10);
       if (!n || n > 999) {
         var box = document.getElementById('digits');
@@ -302,6 +458,17 @@
       }
       var nr = ('000' + n).slice(-3);
       clearTimeout(S.idleTimer);
+
+      // Lancering: sleutelhouders werken altijd, ook zonder verbinding
+      if (L.on && LAUNCH_KEYS.indexOf(nr) >= 0) {
+        var keyName = members && members[nr] ? members[nr].name : '';
+        S.result = { nr: nr, name: keyName, id: newId(), key: true };
+        enqueue({ action: 'checkin', nr: nr, id: S.result.id, ts: Date.now(), kind: 'launch' });
+        L.keys[nr] = keyName;
+        saveLaunch();
+        show('welcome', WELCOME_SECONDS);
+        return;
+      }
 
       // Snel pad: nummer staat in de lokale ledenlijst → meteen tonen,
       // de check-in gaat op de achtergrond naar het sheet.
@@ -336,6 +503,8 @@
     function notMe() {
       var id = S.result && S.result.id;
       if (id) enqueue({ action: 'notme', id: id });
+      if (S.result && S.result.key) { delete L.keys[S.result.nr]; saveLaunch(); }
+      S.result = null;
       reset();
     }
 
@@ -359,9 +528,131 @@
       S.screen = 'start';
       S.digits = '';
       S.result = null;
+      if (L.on && allKeysTurned()) { S.screen = 'launch'; render(); startHold(); return; }
       // Na middernacht: herladen zodat een nieuwe versie van de pagina wordt opgepikt
       if (new Date().toDateString() !== loadedOn && navigator.onLine) { location.reload(); return; }
       render();
+    }
+
+    // =========================================================
+    //  LANCERING
+    // =========================================================
+    var LAUNCH_KEY = 'kvds-launch';
+
+    function turnedCount() {
+      return LAUNCH_KEYS.filter(function (nr) { return L.keys[nr] !== undefined; }).length;
+    }
+    function allKeysTurned() { return turnedCount() === LAUNCH_KEYS.length; }
+
+    // Bewaard met datum, zodat een herstart halverwege de ceremonie niets kwijtraakt
+    function saveLaunch() {
+      save(LAUNCH_KEY, { date: new Date().toDateString(), on: L.on, keys: L.keys, done: !!L.done });
+    }
+
+    function toggleLaunch() {
+      L = { on: !L.on, keys: {}, done: false };
+      saveLaunch();
+      S.digits = '';
+      render();
+    }
+
+    var hold = { held: [false, false], p: 0, raf: null, last: 0 };
+
+    function startHold() {
+      hold.held = LAUNCH_KEYS.map(function () { return false; });
+      hold.p = 0;
+      hold.last = 0;
+      LAUNCH_KEYS.forEach(function (nr, i) {
+        var btn = document.getElementById('hold' + i);
+        var down = function (e) {
+          e.preventDefault();
+          ensureAudio();
+          hold.held[i] = true;
+          try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+          btn.classList.add('held');
+        };
+        var up = function () { hold.held[i] = false; btn.classList.remove('held'); };
+        btn.addEventListener('pointerdown', down);
+        btn.addEventListener('pointerup', up);
+        btn.addEventListener('pointercancel', up);
+        btn.addEventListener('lostpointercapture', up);
+      });
+      cancelAnimationFrame(hold.raf);
+      hold.raf = requestAnimationFrame(holdLoop);
+    }
+
+    function holdLoop(t) {
+      if (S.screen !== 'launch') return;
+      var dt = hold.last ? (t - hold.last) / 1000 : 0;
+      hold.last = t;
+      var count = hold.held.filter(Boolean).length;
+      var all = count === hold.held.length;
+      // Samen ingedrukt: ring loopt vol. Iemand laat los: ring loopt snel terug.
+      hold.p = all ? Math.min(1, hold.p + dt / HOLD_SECONDS) : Math.max(0, hold.p - dt / 0.8);
+      hold.held.forEach(function (h, i) {
+        var ring = document.getElementById('ring' + i);
+        if (ring) ring.style.setProperty('--p', hold.p.toFixed(3));
+      });
+      var hint = document.getElementById('holdhint');
+      if (hint) {
+        var waiting = LAUNCH_KEYS.filter(function (nr, i) { return !hold.held[i]; })
+          .map(function (nr, i) { return L.keys[nr] || 'key ' + (LAUNCH_KEYS.indexOf(nr) + 1); });
+        hint.textContent = all ? 'Keep holding\u2026'
+          : count > 0 ? 'Waiting for ' + waiting.join(' & ') + '\u2026' : '';
+      }
+      if (hold.p >= 1) { startCountdown(); return; }
+      hold.raf = requestAnimationFrame(holdLoop);
+    }
+
+    function startCountdown() {
+      S.count = 3;
+      S.screen = 'count';
+      render();
+      beep(660, 0.18);
+      var tickTimer = setInterval(function () {
+        S.count -= 1;
+        if (S.count > 0) { render(); beep(660, 0.18); return; }
+        clearInterval(tickTimer);
+        launched();
+      }, 1000);
+    }
+
+    function launched() {
+      L = { on: false, keys: {}, done: true };
+      saveLaunch();
+      enqueue({ action: 'launch', id: newId(), ts: Date.now() });
+      // ?launch uit de adresbalk halen, zodat herladen gewoon het inlogscherm geeft
+      if (/[?&]launch\b/.test(location.search) && history.replaceState) {
+        history.replaceState(null, '', location.pathname + (DEMO ? '?demo' : ''));
+      }
+      show('reveal', REVEAL_SECONDS);
+      fanfare();
+    }
+
+    // Geluid zonder bestanden: korte tonen via Web Audio (start pas na een aanraking)
+    var audio = null;
+    function ensureAudio() {
+      try {
+        if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+        if (audio.state === 'suspended') audio.resume();
+      } catch (e) { audio = null; }
+    }
+    function beep(freq, dur, delay) {
+      if (!audio) return;
+      var t = audio.currentTime + (delay || 0);
+      var o = audio.createOscillator();
+      var g = audio.createGain();
+      o.type = 'triangle';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(audio.destination);
+      o.start(t); o.stop(t + dur + 0.05);
+    }
+    function fanfare() {
+      [523, 659, 784, 1047].forEach(function (f, i) { beep(f, 0.5, i * 0.12); });
+      beep(1047, 1.2, 0.6); beep(1319, 1.2, 0.6);
     }
 
     // =========================================================
@@ -469,7 +760,10 @@
     document.addEventListener('keydown', function (e) {
       if (/^[0-9]$/.test(e.key)) press(e.key);
       else if (e.key === 'Backspace') backspace();
-      else if (e.key === 'Enter') { if (S.screen === 'start') submit(); else if (S.screen !== 'loading') reset(); }
+      else if (e.key === 'Enter') {
+        if (S.screen === 'start') submit();
+        else if (['welcome', 'unknown', 'inactive', 'error', 'reveal'].indexOf(S.screen) >= 0) reset();
+      }
     });
     // Geen pinch-zoom of contextmenu op de kiosk
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
@@ -477,7 +771,13 @@
 
     var saved = restore(MEMBERS_KEY);
     if (saved) setMembers(saved);
-    render();
+    var savedLaunch = restore(LAUNCH_KEY);
+    if (savedLaunch && savedLaunch.date === new Date().toDateString()) {
+      L = { on: !!savedLaunch.on, keys: savedLaunch.keys || {}, done: !!savedLaunch.done };
+    }
+    if (/[?&]launch\b/.test(location.search) && !L.done) L.on = true;
+    if (L.on && allKeysTurned()) { S.screen = 'launch'; render(); startHold(); }
+    else render();
     // Ledenlijst alleen bij het laden ophalen (de pagina herlaadt elke nacht);
     // eventueel achtergebleven check-ins van vóór een herstart alsnog versturen.
     refreshMembers().catch(function (err) { console.error(err); });
