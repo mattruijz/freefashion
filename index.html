@@ -470,6 +470,38 @@
       border-color: var(--blue);
       color: var(--blue);
     }
+
+    /* ===== EVENT MODE (tijdelijk) ===== */
+    .timer-track {
+      height: 6px;
+      background: var(--dim);
+      margin-bottom: 1rem;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .timer-fill {
+      height: 100%;
+      background: var(--blue);
+      transform-origin: left;
+      animation: timerShrink linear forwards;
+    }
+    @keyframes timerShrink {
+      from { transform: scaleX(1); }
+      to   { transform: scaleX(0); }
+    }
+    .feedback-points {
+      font-size: clamp(0.9rem, 3.8vw, 1.05rem);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .end-points {
+      font-size: clamp(1rem, 4.5vw, 1.4rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
   </style>
 </head>
 <body>
@@ -584,6 +616,35 @@
   const INT_PAUSE = 3;   // seconden interlude tonen
 
   // ============================================================
+  //  EVENT MODE (tijdelijk) — punten op snelheid + naamvraag
+  //  Na het event: zet EVENT_MODE op false en upload opnieuw.
+  // ============================================================
+  const EVENT_MODE = true;
+  const EVENT_ID   = 'event-2026-10-30';  // telt pogingen per telefoon voor dit event
+  const Q_TIME     = 30;  // seconden: direct antwoord = 1000 punten, na 30 sec = 500
+
+  // Kahoot-formule: goed antwoord geeft 500–1000 punten, sneller = meer
+  function calcPoints(sec) {
+    var r = Math.min(sec / Q_TIME, 1);
+    return Math.round(1000 * (1 - r / 2));
+  }
+
+  function nextAttempt() {
+    try {
+      var key = 'ff_poging_' + EVENT_ID;
+      var n = (parseInt(localStorage.getItem(key), 10) || 0) + 1;
+      localStorage.setItem(key, String(n));
+      return n;
+    } catch (e) { return 1; }
+  }
+
+  function totals() {
+    var pts = 0, secs = 0;
+    S.answers.forEach(function(a) { pts += a.points || 0; secs += a.secs || 0; });
+    return { points: pts, secs: Math.round(secs * 10) / 10 };
+  }
+
+  // ============================================================
   //  STATE
   // ============================================================
   var S = {
@@ -591,6 +652,9 @@
     qIndex:    0,
     answers:   [],   // [{qIndex, chosen, isCorrect}]
     email:     '',
+    naam:      '',
+    poging:    1,
+    qStart:    0,
     sessionId: uid(),
     _auto:     null
   };
@@ -643,7 +707,9 @@
       el('div', { className: 'logo-url' }, [txt('thisisfreefashion.com')]),
       el('div', { className: 'welcome-title' }, [txt('De Quiz')]),
       el('p', { className: 'welcome-sub' }, [
-        txt('12 vragen over mode, duurzaamheid en de wereld om je heen. Klaar?')
+        txt(EVENT_MODE
+          ? '12 vragen over mode, duurzaamheid en de wereld om je heen. Hoe sneller je het goede antwoord geeft, hoe meer punten. De winnaar maken we vandaag bekend!'
+          : '12 vragen over mode, duurzaamheid en de wereld om je heen. Klaar?')
       ]),
       el('button', { className: 'btn', onclick: startQuiz }, [txt('LET\u2019S GO! \u2192')])
     ]);
@@ -654,6 +720,7 @@
     S.qIndex  = 0;
     S.answers = [];
     S.screen  = 'question';
+    if (EVENT_MODE) S.poging = nextAttempt();
     render();
   }
 
@@ -689,23 +756,29 @@
         ])
       ]),
       el('div', { className: 'question-text' }, [txt(q.question)]),
+      EVENT_MODE ? el('div', { className: 'timer-track' }, [
+        el('div', { className: 'timer-fill', style: 'animation-duration:' + Q_TIME + 's' })
+      ]) : null,
       optionsDiv
     ]);
     app.appendChild(screen);
+    S.qStart = performance.now();
   }
 
   function pickAnswer(chosen) {
     stopTimers();
     var q = QUESTIONS[S.qIndex];
     var isCorrect = (chosen === q.correct);
-    S.answers.push({ qIndex: S.qIndex, chosen: chosen, isCorrect: isCorrect });
-    showAnswerScreen(chosen, isCorrect);
+    var secs = (performance.now() - S.qStart) / 1000;
+    var points = isCorrect ? calcPoints(secs) : 0;
+    S.answers.push({ qIndex: S.qIndex, chosen: chosen, isCorrect: isCorrect, secs: secs, points: points });
+    showAnswerScreen(chosen, isCorrect, points);
   }
 
   // ============================================================
   //  ANSWER — toelichting boven opties, handmatige VOLGENDE knop
   // ============================================================
-  function showAnswerScreen(chosen, isCorrect) {
+  function showAnswerScreen(chosen, isCorrect, points) {
     var q     = QUESTIONS[S.qIndex];
     var isTF  = (q.type === 'truefalse');
     var pct   = ((S.qIndex + 1) / QUESTIONS.length * 100).toFixed(1) + '%';
@@ -740,6 +813,7 @@
       // Toelichting boven de antwoordopties (groter)
       el('div', { className: 'feedback ' + fbClass }, [
         el('div', { className: 'feedback-label' }, [txt(fbLabel)]),
+        EVENT_MODE ? el('div', { className: 'feedback-points' }, [txt('+' + points + ' punten')]) : null,
         el('div', { className: 'feedback-text' }, [txt(q.explanation)])
       ]),
       // Antwoordopties verkleind (review mode)
@@ -759,7 +833,7 @@
       showInterlude(INTERLUDES[justAnswered]);
     } else if (S.qIndex >= QUESTIONS.length - 1) {
       S.qIndex++;
-      S.screen = 'end';
+      S.screen = afterQuizScreen();
       render();
     } else {
       S.qIndex++;
@@ -786,9 +860,68 @@
     app.appendChild(screen);
 
     S._auto = setTimeout(function() {
-      S.screen = S.qIndex >= QUESTIONS.length ? 'end' : 'question';
+      S.screen = S.qIndex >= QUESTIONS.length ? afterQuizScreen() : 'question';
       render();
     }, INT_PAUSE * 1000);
+  }
+
+  function afterQuizScreen() {
+    return EVENT_MODE ? 'name' : 'end';
+  }
+
+  // ============================================================
+  //  NAAM (alleen in EVENT_MODE) — vóór de score
+  // ============================================================
+  function renderName() {
+    clear();
+
+    var nameInput = el('input', {
+      type: 'text',
+      className: 'email-input',
+      placeholder: 'Voornaam + achternaam',
+      autocomplete: 'name',
+      autocapitalize: 'words',
+      maxlength: '40',
+      oninput: function(e) { S.naam = e.target.value.trim(); e.target.classList.remove('invalid'); },
+      onkeydown: function(e) { if (e.key === 'Enter') submitName(); }
+    });
+    nameInput.value = S.naam;
+
+    var screen = el('div', { className: 'screen screen--email' }, [
+      el('div', { className: 'email-q' }, [txt('Bijna klaar!')]),
+      el('div', { className: 'email-title' }, [txt('WIE BEN'), el('br'), txt('JIJ?')]),
+      el('p', { className: 'email-sub' }, [
+        txt('Vul je naam in en maak kans om de winnaar van vandaag te worden. Daarna zie je je score!')
+      ]),
+      el('div', { className: 'email-row' }, [
+        nameInput,
+        el('button', { className: 'email-send', onclick: submitName }, [txt('→')])
+      ]),
+      el('p', { className: 'email-privacy' }, [
+        txt('We gebruiken je naam alleen om vandaag de winnaar bekend te maken.')
+      ]),
+      el('button', { className: 'btn-skip', onclick: function() { S.naam = ''; goToEnd(); } }, [
+        txt('Overslaan (ik doe niet mee)')
+      ])
+    ]);
+    app.appendChild(screen);
+
+    setTimeout(function() { nameInput.focus(); }, 300);
+  }
+
+  function submitName() {
+    if (!S.naam) {
+      var inp = document.querySelector('.email-input');
+      if (inp) { inp.classList.add('invalid'); inp.placeholder = 'Vul je naam in'; }
+      return;
+    }
+    S.naam = S.naam.slice(0, 40);
+    goToEnd();
+  }
+
+  function goToEnd() {
+    S.screen = 'end';
+    render();
   }
 
   // ============================================================
@@ -899,6 +1032,9 @@
     var screen = el('div', { className: 'screen screen--end' }, [
       el('div', { className: 'score-big' }, [txt(String(score))]),
       el('div', { className: 'score-label' }, [txt('van de ' + total + ' goed')]),
+      EVENT_MODE ? el('div', { className: 'end-points' }, [
+        txt(totals().points.toLocaleString('nl-NL') + ' punten')
+      ]) : null,
       el('div', { className: 'end-title' }, titleChildren),
       el('p', { className: 'end-sub' }, [txt(sub)]),
       el('div', { className: tipClass }, [txt(tip)]),
@@ -914,7 +1050,8 @@
     _submitted = false;
     S = {
       screen: 'welcome', qIndex: 0, answers: [],
-      email: '', sessionId: uid(), _auto: null
+      email: '', naam: '', poging: 1, qStart: 0,
+      sessionId: uid(), _auto: null
     };
     render();
   }
@@ -947,6 +1084,16 @@
         : ('\u2717 ' + chosenText + ' (correct: ' + correctText + ')');
     });
 
+    // Event: extra velden \u2192 script schrijft ze naar de tabbladen 'Event' en 'Ranglijst'
+    if (EVENT_MODE) {
+      var t = totals();
+      payload.event  = EVENT_ID;
+      payload.naam   = S.naam || '';
+      payload.punten = t.points;
+      payload.tijd   = t.secs;
+      payload.poging = S.poging;
+    }
+
     // GET ipv POST: Google Apps Script redirect zet POST om naar GET waardoor
     // doPost nooit wordt aangeroepen. Met GET + URL-parameter werkt het wel.
     var url = SHEETS_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
@@ -962,6 +1109,7 @@
     switch (S.screen) {
       case 'welcome':  renderWelcome();  break;
       case 'question': renderQuestion(); break;
+      case 'name':     renderName();     break;
       case 'email':    renderEmail();    break;
       case 'end':      renderEnd();      break;
     }
